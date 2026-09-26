@@ -84,6 +84,9 @@ export const ultramsgProvider: WhatsappProvider = {
   parseWebhook(body) {
     const b = body as UltraWebhook | null;
     if (!b || b.event_type !== "message_received" || !b.data) return [];
+    // UltraMsg does not sign webhooks; the instance id in the body is the only shared secret.
+    const expected = process.env.ULTRAMSG_INSTANCE_ID;
+    if (expected && b.instanceId && b.instanceId !== expected) return [];
     const d = b.data;
     if (d.fromMe) return [];
     const from = toE164(d.from);

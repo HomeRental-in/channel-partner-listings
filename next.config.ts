@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   allowedDevOrigins: ["*.localhost", "localhost", "*.lvh.me", "lvh.me"],
   serverExternalPackages: ["sharp", "@react-pdf/renderer", "@prisma/client"],
   images: {
