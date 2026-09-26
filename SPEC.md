@@ -1,6 +1,6 @@
 # Channel Partner Listings — Product Spec (v1)
 
-Working brand name: **ShowHome** (configurable via `NEXT_PUBLIC_BRAND_NAME`). A free, WhatsApp-first listing
+Working brand name: **YourAddress** (configurable via `NEXT_PUBLIC_BRAND_NAME`). A free, WhatsApp-first listing
 tool for Indian real-estate channel partners (CPs). Every CP gets `username.<ROOT_DOMAIN>`; every listing is a
 fast, branded page with WhatsApp/Call CTAs. The product is free. The business value is the Meta pixel audience
 built from **buyers who open the links** (never the CPs, never buyer PII).
