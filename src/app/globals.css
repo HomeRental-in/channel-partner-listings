@@ -1,26 +1,68 @@
 @import "tailwindcss";
 
+/* ── Design tokens (see DESIGN.md — modelled on eloqwnt.com) ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #e5e9eb;          /* page background */
+  --panel: #ffffff;       /* floating white panels */
+  --soft: #f2f7f9;        /* soft inner sections */
+  --ink: #000000;
+  --muted: rgba(0, 0, 0, 0.55);
+  --line: rgba(0, 0, 0, 0.1);
+  --accent: #000000;      /* dark pill buttons */
+  --wa: #25d366;          /* WhatsApp green */
+  --radius-panel: 32px;
+  --radius-card: 20px;
+  --radius-inner: 16px;
+  --radius-pill: 500px;
+  --font-display: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  --font-body: var(--font-outfit), "Outfit", system-ui, sans-serif;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-soft: var(--soft);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-wa: var(--wa);
+  --radius-panel: var(--radius-panel);
+  --radius-card: var(--radius-card);
+  --radius-inner: var(--radius-inner);
+  --radius-pill: var(--radius-pill);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html { scroll-behavior: smooth; }
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  letter-spacing: -0.02em;
+  -webkit-font-smoothing: antialiased;
 }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.03em; line-height: 1.05; }
+
+/* Shared primitives used by marketing + dashboard */
+.panel { background: var(--panel); border-radius: var(--radius-panel); }
+.card { background: var(--panel); border-radius: var(--radius-card); }
+.btn { display: inline-flex; align-items: center; gap: .5rem; border-radius: var(--radius-pill); padding: .9rem 1.5rem; font-weight: 500; line-height: 1; transition: transform .15s ease, background .2s ease, opacity .2s ease; cursor: pointer; }
+.btn:active { transform: scale(.98); }
+.btn-dark { background: var(--ink); color: #fff; }
+.btn-dark:hover { opacity: .9; }
+.btn-light { background: var(--bg); color: var(--ink); }
+.btn-light:hover { background: #dde2e5; }
+.btn-wa { background: var(--wa); color: #fff; }
+.btn-ghost { background: transparent; border: 1px solid var(--line); color: var(--ink); }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; background: var(--bg); }
+.eyebrow { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+.section-label::before { content: "•"; margin-right: .6rem; }
+.input { width: 100%; background: var(--soft); border: 1px solid transparent; border-radius: 14px; padding: .8rem 1rem; font-size: 1rem; outline: none; transition: border-color .15s; }
+.input:focus { border-color: rgba(0,0,0,.35); background: #fff; }
+.chip { display: inline-flex; align-items: center; gap: .35rem; border-radius: var(--radius-pill); background: var(--bg); padding: .35rem .8rem; font-size: .85rem; }
+.hairline { border-top: 1px solid var(--line); }
+
+/* Reveal helper for GSAP (initial state) */
+.reveal { opacity: 0; transform: translateY(24px); }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; } }

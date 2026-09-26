@@ -1,0 +1,397 @@
+// Channel Partner Listings — data model
+// Postgres in all environments. JSON columns hold flexible, per-listing structures
+// (price lines, feature sections, configurations) so the editor can evolve without migrations.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ───────────────────────── Users & auth ─────────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  phone            String    @unique // E.164, e.g. +919650355568 — login identity & WhatsApp intake identity
+  whatsappNumber   String? // shown to buyers; defaults to phone
+  name             String?
+  agencyName       String?
+  email            String?
+  city             String?
+  username         String?   @unique // subdomain slug: username.<ROOT_DOMAIN>
+  avatarUrl        String?
+  reraNumber       String?
+  bio              String?
+  yearsExperience  Int?
+  dealsClosed      Int?
+  areas            Json      @default("[]") // string[]
+  propertyTypes    Json      @default("[]") // string[] e.g. ["Residential","Luxury"]
+  languages        Json      @default("[]") // string[]
+  responseTime     String? // "1h" | "same_day" | "24h" | "48h"
+  testimonials     Json      @default("[]") // {quote, author, role?}[] max 3
+  awards           Json      @default("[]") // {title, year?, by?}[] max 6
+  storefrontGroups Json      @default("[]") // {id, title, listingIds: string[]}[] — "Organise" headings
+  brokerCard       Json      @default("{\"showNamePhoto\":true,\"showAgency\":true,\"showProfileLink\":true,\"showWhatsApp\":true,\"showCall\":true}")
+  defaultTheme     Theme     @default(EDITORIAL)
+  dailyReport      Boolean   @default(true)
+  onboardedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  listings          Listing[]
+  collections       Collection[]
+  sessions          Session[]
+  projects          Project[]
+  notifications     Notification[]
+  reports           DailyReport[]
+  agencyMemberships AgencyMember[]
+  ownedAgencies     Agency[]              @relation("AgencyOwner")
+  conversation      WhatsappConversation?
+}
+
+model AuthOtp {
+  id        String    @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// ───────────────────────── Listings ─────────────────────────
+
+enum ListingStatus {
+  DRAFT // created, not yet published (review pending)
+  LIVE
+  SOLD
+  RENTED
+  ARCHIVED
+}
+
+enum PropertyCategory {
+  RESIDENTIAL
+  COMMERCIAL_OFFICE
+  COMMERCIAL_SHOP
+  WAREHOUSE
+  PLOT
+  BUILDING
+}
+
+enum TransactionType {
+  SALE
+  RENT
+  LEASE
+}
+
+enum Theme {
+  EDITORIAL // light, serif, magazine layout, soft fades
+  MIDNIGHT // dark, grotesk sans, parallax + slide-ins
+  SUNRISE // warm, rounded sans, bento grid, spring pops
+}
+
+enum SourceChannel {
+  WHATSAPP
+  WEB
+}
+
+model Listing {
+  id     String        @id @default(cuid())
+  userId String
+  user   User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug   String        @unique // globally unique: "<title-slug>-<6 char>"
+  status ListingStatus @default(DRAFT)
+  source SourceChannel @default(WEB)
+  theme  Theme? // null → user.defaultTheme
+
+  // Project link (template copy model — see SPEC.md). Listing owns its own copy of every field.
+  projectId String?
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Basics
+  title         String           @default("")
+  category      PropertyCategory @default(RESIDENTIAL)
+  propertyType  String? // "Apartment", "Villa", "Builder Floor", "Office Space", ...
+  transaction   TransactionType  @default(SALE)
+  bhk           String? // "4 BHK + Servant"
+  areaSqft      Float?
+  areaLabel     String? // as entered, e.g. "4200 sq ft carpet"
+  furnishing    String?
+  floor         String?
+  totalFloors   String?
+  facing        String?
+  ageOfProperty String?
+  bathrooms     Int?
+  balconies     Int?
+  ownership     String?
+  parking       String?
+  possession    String?
+
+  // Pricing
+  currency         String   @default("INR")
+  price            Float? // primary numeric price used for display/sort/analytics bands
+  priceLines       Json     @default("[]") // {label, amount, unit?, note?}[] — what buyers see
+  negotiable       Boolean  @default(false)
+  loanAvailable    Boolean?
+  electricity      String?
+  waterCharges     String?
+  priceHistoryNote String?
+
+  // Location
+  locality String?
+  city     String?
+  landmark String?
+  pincode  String?
+  mapUrl   String?
+  formUrl  String?
+
+  // Content
+  description          String?
+  highlights           Json    @default("[]") // string[] max 6
+  features             Json    @default("[]") // {id, title, items: {id, icon?, label, value}[]}[]
+  amenities            Json    @default("[]") // string[]
+  neighbourhood        Json    @default("[]") // {label, value}[] e.g. {"IGI Airport","30 min"}
+  urgencyBadge         String? // "Only 2 units left"
+  videoUrl             String? // uploaded walkthrough
+  videoTourUrl         String? // external YouTube/Instagram link
+  documentsTitle       String?
+  brokerCardOverride   Json? // same shape as User.brokerCard; null = follow defaults
+  originalMessage      String? // raw text the CP sent (WhatsApp/web)
+  qualityScore         Int     @default(0)
+  hiddenFromStorefront Boolean @default(false)
+
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  photos      Photo[]
+  documents   Document[]
+  collections CollectionListing[]
+  events      AnalyticsEvent[]
+
+  @@index([userId, status])
+  @@index([city])
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  width     Int?
+  height    Int?
+  order     Int      @default(0)
+  roomTag   String? // "Living room", "Kitchen"...
+  createdAt DateTime @default(now())
+
+  @@index([listingId, order])
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url       String
+  name      String
+  sizeBytes Int
+  createdAt DateTime @default(now())
+
+  @@index([listingId])
+}
+
+// ───────────────────────── Projects (templates) ─────────────────────────
+
+model Project {
+  id                 String   @id @default(cuid())
+  createdById        String?
+  createdBy          User?    @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  name               String
+  slug               String   @unique
+  developer          String?
+  reraNumber         String?
+  reraUrl            String?
+  possessionDate     String?
+  city               String?
+  locality           String?
+  landmark           String?
+  mapUrl             String?
+  description        String?
+  highlights         Json     @default("[]")
+  configurations     Json     @default("[]") // {type, sizeSqft, priceFrom, priceTo?, note?}[]
+  paymentPlan        Json     @default("[]") // {milestone, percent}[]
+  floorPlans         Json     @default("[]") // {url, label}[]
+  amenities          Json     @default("[]")
+  locationAdvantages Json     @default("[]") // {label, value}[]
+  features           Json     @default("[]") // same shape as Listing.features
+  photos             Json     @default("[]") // {url}[]
+  brochureUrl        String?
+  videoTourUrl       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  listings Listing[]
+
+  @@index([city])
+}
+
+// ───────────────────────── Collections ─────────────────────────
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug        String   @unique
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  listings CollectionListing[]
+}
+
+model CollectionListing {
+  collectionId String
+  listingId    String
+  order        Int        @default(0)
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  listing      Listing    @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([collectionId, listingId])
+}
+
+// ───────────────────────── Agencies ─────────────────────────
+
+model Agency {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique // 7-digit join code
+  username  String?  @unique // agency storefront subdomain
+  ownerId   String
+  owner     User     @relation("AgencyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  members AgencyMember[]
+}
+
+model AgencyMember {
+  agencyId String
+  userId   String
+  role     String   @default("AGENT") // OWNER | ADMIN | AGENT
+  joinedAt DateTime @default(now())
+  agency   Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([agencyId, userId])
+}
+
+// ───────────────────────── WhatsApp intake ─────────────────────────
+
+enum ConversationState {
+  IDLE
+  COLLECTING // receiving photos/text until DONE
+  PROCESSING // AI extraction running
+}
+
+model WhatsappConversation {
+  id             String            @id @default(cuid())
+  phone          String            @unique
+  userId         String?           @unique
+  user           User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  state          ConversationState @default(IDLE)
+  draftListingId String?
+  lastMessageAt  DateTime          @default(now())
+  createdAt      DateTime          @default(now())
+
+  messages WhatsappMessage[]
+}
+
+model WhatsappMessage {
+  id             String               @id @default(cuid())
+  conversationId String
+  conversation   WhatsappConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  providerMsgId  String?              @unique
+  direction      String // IN | OUT
+  kind           String // text | image | video | document | audio | other
+  text           String?
+  mediaUrl       String? // stored copy under /uploads
+  raw            Json?
+  createdAt      DateTime             @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+// ───────────────────────── Analytics (no buyer PII) ─────────────────────────
+
+enum EventType {
+  VIEW
+  WHATSAPP_TAP
+  CALL_TAP
+  SHARE
+  BROCHURE_DOWNLOAD
+  DOC_DOWNLOAD
+  PHOTO_VIEW
+  VIDEO_PLAY
+  MAP_OPEN
+  FORM_OPEN
+}
+
+model AnalyticsEvent {
+  id         String    @id @default(cuid())
+  listingId  String?
+  listing    Listing?  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ownerId    String // listing owner (denormalised for fast per-CP queries)
+  type       EventType
+  visitorId  String? // first-party cookie id (random), never an identity
+  viewerName String? // value of ?n= share parameter, if the CP added one
+  city       String? // coarse IP geolocation, city level only
+  device     String? // mobile | desktop | tablet
+  referrer   String?
+  path       String?
+  meta       Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([listingId, createdAt])
+  @@index([ownerId, createdAt])
+  @@index([visitorId, listingId])
+}
+
+model DailyReport {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime // report day (00:00 IST)
+  payload   Json
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, date])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  href      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt])
+}
