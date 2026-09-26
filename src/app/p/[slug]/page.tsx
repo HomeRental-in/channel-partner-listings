@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const p = await db.project.findUnique({ where: { slug }, select: { name: true, developer: true, locality: true, city: true, description: true, photos: true } });
   if (!p) return { title: "Project not found", robots: { index: false } };
   const title = [p.name, p.developer].filter(Boolean).join(" by ");
-  const description = (p.description ?? "").replace(/\s+/g, " ").trim().slice(0, 160) || `${p.name}${p.locality || p.city ? ` in ${[p.locality, p.city].filter(Boolean).join(", ")}` : ""} — configurations, payment plan, floor plans and channel partners.`;
+  const description = (p.description ?? "").replace(/\s+/g, " ").trim().slice(0, 160) || `${p.name}${p.locality || p.city ? ` in ${[p.locality, p.city].filter(Boolean).join(", ")}` : ""} — configurations, payment plan, floor plans and who to contact.`;
   const cover = asArray<{ url: string }>(p.photos)[0]?.url;
   return { title, description, alternates: { canonical: projectUrl(slug) }, openGraph: { title, description, url: projectUrl(slug), type: "website", siteName: BRAND, images: cover ? [{ url: absoluteUrl(cover) }] : undefined } };
 }
@@ -158,12 +158,12 @@ export default async function ProjectPage({ params }: Props) {
             <Reveal className="ed-reveal">
               <h2 className="ed-h2">Listed by</h2>
               {listedBy.length === 0 ? (
-                <p className="ed-serif-i ed-muted" style={{ fontSize: "1.15rem" }}>No channel partner has listed this project yet.</p>
+                <p className="ed-serif-i ed-muted" style={{ fontSize: "1.15rem" }}>No one has listed this project yet.</p>
               ) : (
                 <div style={{ display: "grid", gap: "0.75rem" }}>
                   {listedBy.map((l) => {
                     const u = l.user;
-                    const name = u.name ?? "Channel partner";
+                    const name = u.name ?? "Property advisor";
                     const wa = u.whatsappNumber ?? u.phone;
                     return (
                       <div className="ed-broker" key={u.id}>

@@ -25,7 +25,7 @@ export function BrokerCard({ broker, listingId, message }: { broker: PublicBroke
       {showName && <Avatar broker={broker} />}
       <div style={{ minWidth: 0, gridColumn: showName ? undefined : "1 / -1" }}>
         <p className="ed-eyebrow">Listed by</p>
-        <p className="ed-serif" style={{ fontSize: "1.4rem", marginTop: "0.15rem" }}>{showName ? broker.name : "Channel partner"}</p>
+        <p className="ed-serif" style={{ fontSize: "1.4rem", marginTop: "0.15rem" }}>{showName ? broker.name : "Property advisor"}</p>
         <p className="ed-muted" style={{ fontSize: "0.9rem" }}>
           {[card.showAgency ? broker.agencyName : null, broker.city].filter(Boolean).join(" · ")}
         </p>

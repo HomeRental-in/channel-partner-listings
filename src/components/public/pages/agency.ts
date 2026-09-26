@@ -51,7 +51,7 @@ export async function getAgencyStorefront(username: string): Promise<PublicStore
     whatsapp: owner.whatsappNumber ?? owner.phone,
     reraNumber: owner.reraNumber,
     city: cities[0] ?? null,
-    bio: owner.bio ?? `${agency.name} — ${members.length} channel partner${members.length === 1 ? "" : "s"}${cities.length ? ` in ${cities.join(", ")}` : ""}.`,
+    bio: owner.bio ?? `${agency.name} — ${members.length} advisor${members.length === 1 ? "" : "s"}${cities.length ? ` in ${cities.join(", ")}` : ""}.`,
     yearsExperience: owner.yearsExperience,
     dealsClosed: members.reduce((n, u) => n + (u.dealsClosed ?? 0), 0) || null,
     activeListings: listings.length,
@@ -66,7 +66,7 @@ export async function getAgencyStorefront(username: string): Promise<PublicStore
 
   // One "Organise" group per member who has listings, in member order.
   const groups = members
-    .map((u) => ({ id: u.id, title: u.name ?? "Channel partner", listingIds: listings.filter((l) => l.userId === u.id).map((l) => l.id) }))
+    .map((u) => ({ id: u.id, title: u.name ?? "Property advisor", listingIds: listings.filter((l) => l.userId === u.id).map((l) => l.id) }))
     .filter((g) => g.listingIds.length);
 
   return { broker, theme: owner.defaultTheme, listings: listings.map(toCard), groups: groups.length > 1 ? groups : [] };

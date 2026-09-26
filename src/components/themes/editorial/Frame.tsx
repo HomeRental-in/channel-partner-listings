@@ -18,7 +18,7 @@ export function Frame({ mastheadName, mastheadHref, mastheadRight, hasMobileBar 
           <span>
             Powered by <a href={rootUrl("/")}>{BRAND}</a>
           </span>
-          <span className="ed-faint">Free listing pages for channel partners.</span>
+          <span className="ed-faint">Fast, honest property pages.</span>
         </footer>
       </div>
     </div>

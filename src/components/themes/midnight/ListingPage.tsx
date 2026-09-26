@@ -221,7 +221,7 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
 
           <Reveal from="left">
             <Panel id="contact">
-              <SectionTitle eyebrow="Talk to">Your channel partner</SectionTitle>
+              <SectionTitle eyebrow="Talk to">Get in touch</SectionTitle>
               <BrokerCard broker={l.broker} listingId={l.id} waHref={c.whatsapp} callHref={c.call} />
               <div className="mt-5 border-t border-white/5 pt-5">
                 <div className="mb-2 text-[11px] uppercase tracking-[.18em] text-[#7D8391]">Quick questions</div>

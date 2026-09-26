@@ -11,7 +11,7 @@ export function CtaCard({ data }: { data: PublicListing }) {
   const showCall = card.showCall && Boolean(data.broker.phone);
   return (
     <div className="ed-cta-card">
-      <p className="ed-eyebrow" style={{ marginBottom: "0.75rem" }}>Talk to {card.showNamePhoto ? name : "the broker"}</p>
+      <p className="ed-eyebrow" style={{ marginBottom: "0.75rem" }}>Talk to {card.showNamePhoto ? name : "the advisor"}</p>
       <div style={{ display: "grid", gap: "0.6rem" }}>
         {showWa && (
           <TrackedLink event="WHATSAPP_TAP" listingId={data.id} href={cta.whatsapp} target="_blank" rel="noopener" className="ed-btn ed-btn-wa ed-btn-block">

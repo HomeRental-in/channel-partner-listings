@@ -27,7 +27,7 @@ export function EditorialStorefront({ data }: StorefrontProps) {
       <Reveal as="section" className="ed-store-hero ed-reveal">
         <Avatar broker={b} size="lg" />
         <div style={{ minWidth: 0 }}>
-          <p className="ed-eyebrow">{[b.agencyName, b.city].filter(Boolean).join(" · ") || "Channel partner"}</p>
+          <p className="ed-eyebrow">{[b.agencyName, b.city].filter(Boolean).join(" · ") || "Property advisor"}</p>
           <h1 className="ed-serif" style={{ fontSize: "clamp(2.2rem, 5vw, 3.6rem)", marginTop: "0.35rem" }}>{b.name}</h1>
           {b.reraNumber && <p className="ed-faint" style={{ fontSize: "0.8rem", marginTop: "0.35rem" }}>RERA {b.reraNumber}</p>}
           {stats.length > 0 && (

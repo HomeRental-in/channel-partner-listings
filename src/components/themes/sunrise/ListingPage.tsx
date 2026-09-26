@@ -240,7 +240,7 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
           {/* Broker card + big CTA at the bottom */}
           <Pop>
             <Card id="contact" className="bg-gradient-to-br from-white to-[#FFF1EB]">
-              <SectionTitle eyebrow="Talk to">Your channel partner</SectionTitle>
+              <SectionTitle eyebrow="Talk to">Get in touch</SectionTitle>
               <BrokerCard broker={l.broker} listingId={l.id} waHref={c.whatsapp} callHref={c.call} big />
               {canWhatsApp(l) && (
                 <div className="mt-6 border-t border-[#F1E6D8] pt-5">

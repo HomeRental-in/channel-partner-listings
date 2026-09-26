@@ -35,7 +35,7 @@ export function Storefront({ data }: StorefrontProps) {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <Avatar broker={b} size={112} className="h-24 w-24 sm:h-28 sm:w-28" />
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">Channel partner</div>
+              <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">Property advisor</div>
               <h1 className="mt-1 text-3xl text-white sm:text-5xl">{b.name}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#A9AFBC]">
                 {b.agencyName && <span>{b.agencyName}</span>}

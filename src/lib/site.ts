@@ -1,6 +1,6 @@
 /** URL helpers. All CP sites are subdomains of ROOT_DOMAIN so the Meta cookie is shared. */
 export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
-export const BRAND = process.env.NEXT_PUBLIC_BRAND_NAME ?? "ChannelDeck";
+export const BRAND = process.env.NEXT_PUBLIC_BRAND_NAME ?? "ShowHome";
 const PROTOCOL = ROOT_DOMAIN.startsWith("localhost") || ROOT_DOMAIN.includes("lvh.me") ? "http" : "https";
 
 export function rootUrl(path = "/") {
