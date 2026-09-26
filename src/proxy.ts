@@ -23,9 +23,10 @@ export function proxy(req: NextRequest) {
   if (host !== ROOT && host.endsWith("." + ROOT)) {
     sub = host.slice(0, -(ROOT.length + 1));
   }
-  if (sub && !RESERVED.has(sub) && !sub.includes(".")) {
-    // Never rewrite dashboard/api/auth paths on a subdomain; send them to the root domain.
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/login") || pathname.startsWith("/review")) {
+  const passThrough = pathname.startsWith("/api") || pathname.startsWith("/uploads");
+  if (sub && !RESERVED.has(sub) && !sub.includes(".") && !passThrough) {
+    // Never rewrite dashboard/auth paths on a subdomain; send them to the root domain. /api and /uploads pass through untouched.
+    if (pathname.startsWith("/dashboard") || pathname.startsWith("/login") || pathname.startsWith("/review") || pathname.startsWith("/dev")) {
       const url = req.nextUrl.clone();
       url.host = ROOT;
       return NextResponse.redirect(url);

@@ -25,6 +25,24 @@ export interface WhatsappProvider {
   parseWebhook(body: unknown, headers: Headers): InboundMessage[];
 }
 
+/**
+ * Normalise any provider phone representation to E.164 with '+'.
+ * Accepts "919650355568", "+91 96503 55568", "919650355568@c.us", "9650355568" (→ +91).
+ * Returns null when the digits do not look like a phone number.
+ */
+export function toE164(raw: string | null | undefined): string | null {
+  if (!raw) return null;
+  const digits = raw.split("@")[0].replace(/[^\d]/g, "");
+  if (digits.length === 10) return "+91" + digits;
+  if (digits.length >= 11 && digits.length <= 15) return "+" + digits;
+  return null;
+}
+
+/** E.164 without the '+', which is what Meta and UltraMsg expect in `to`. */
+export function toDigits(phone: string) {
+  return phone.replace(/[^\d]/g, "");
+}
+
 export function getProvider(): WhatsappProvider {
   const which = process.env.WHATSAPP_PROVIDER ?? "mock";
   if (which === "meta") return metaLoader();
