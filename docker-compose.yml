@@ -32,8 +32,7 @@ services:
       - "127.0.0.1:3000:3000"
     volumes:
       - uploads:/app/public/uploads
-    # Apply schema on every start (idempotent), then run the server
-    command: sh -c "npx prisma db push --skip-generate && node server.js"
+    # schema push happens in the image entrypoint
 
 volumes:
   pgdata:
