@@ -3,13 +3,13 @@ services:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: youraddress
-      POSTGRES_USER: youraddress
+      POSTGRES_DB: estateinfo
+      POSTGRES_USER: estateinfo
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U youraddress"]
+      test: ["CMD-SHELL", "pg_isready -U estateinfo"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -18,13 +18,13 @@ services:
     build:
       context: .
       args:
-        NEXT_PUBLIC_ROOT_DOMAIN: ${NEXT_PUBLIC_ROOT_DOMAIN:-youraddress.in}
-        NEXT_PUBLIC_BRAND_NAME: ${NEXT_PUBLIC_BRAND_NAME:-YourAddress}
+        NEXT_PUBLIC_ROOT_DOMAIN: ${NEXT_PUBLIC_ROOT_DOMAIN:-estateinfo.in}
+        NEXT_PUBLIC_BRAND_NAME: ${NEXT_PUBLIC_BRAND_NAME:-EstateInfo}
         NEXT_PUBLIC_META_PIXEL_ID: ${NEXT_PUBLIC_META_PIXEL_ID:-}
     restart: unless-stopped
     env_file: .env.production
     environment:
-      DATABASE_URL: postgresql://youraddress:${POSTGRES_PASSWORD:-change-me}@db:5432/youraddress?schema=public
+      DATABASE_URL: postgresql://estateinfo:${POSTGRES_PASSWORD:-change-me}@db:5432/estateinfo?schema=public
     depends_on:
       db:
         condition: service_healthy

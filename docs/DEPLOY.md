@@ -1,20 +1,20 @@
-# Deploying YourAddress (youraddress.in)
+# Deploying EstateInfo (estateinfo.in)
 
 The app is one Node process (Next.js 16, standalone build) plus Postgres. It needs: a wildcard domain
-(`*.youraddress.in` → every CP gets a subdomain), persistent storage for uploads (a Docker volume or S3),
+(`*.estateinfo.in` → every CP gets a subdomain), persistent storage for uploads (a Docker volume or S3),
 `ffmpeg` for story-video MP4 conversion (in the image), a cron hit at 08:00 IST for the daily report, and
 outbound HTTPS to Anthropic, UltraMsg and Meta.
 
 ## 1. DNS (GoDaddy registrar → Cloudflare DNS)
 Keep the domain at GoDaddy, move only the nameservers to Cloudflare (free plan). Cloudflare gives you a
 wildcard certificate, HTTPS, a CDN and the `cf-ipcity` header the analytics use for viewer cities.
-1. Cloudflare → Add site → youraddress.in → Free. Copy the two nameservers it shows.
-2. GoDaddy → My Products → youraddress.in → DNS → Nameservers → Change → enter the Cloudflare pair.
+1. Cloudflare → Add site → estateinfo.in → Free. Copy the two nameservers it shows.
+2. GoDaddy → My Products → estateinfo.in → DNS → Nameservers → Change → enter the Cloudflare pair.
 3. In Cloudflare DNS add two records, both **Proxied** (orange cloud):
    - `A  @  <server IP>`
-   - `A  *  <server IP>`  (the wildcard — this is what makes rahul.youraddress.in work)
+   - `A  *  <server IP>`  (the wildcard — this is what makes rahul.estateinfo.in work)
 4. Cloudflare → SSL/TLS → set mode **Full (strict)** and under Edge Certificates enable "Always use HTTPS".
-   Order an Origin Certificate (SSL/TLS → Origin Server) for `youraddress.in, *.youraddress.in` and install it
+   Order an Origin Certificate (SSL/TLS → Origin Server) for `estateinfo.in, *.estateinfo.in` and install it
    in nginx, or use certbot DNS-01 with the Cloudflare plugin. Either way the origin speaks HTTPS.
 5. Cloudflare → Rules → Settings → Managed Transforms → turn on **Add visitor location headers** (gives `cf-ipcity`).
 
@@ -30,8 +30,8 @@ export POSTGRES_PASSWORD=$(openssl rand -hex 16)   # also put it in .env.product
 docker compose up -d --build                 # builds the image, starts Postgres, pushes the schema, starts the app
 docker compose logs -f app                   # wait for "Ready"
 ```
-nginx: `sudo cp deploy/nginx.youraddress.conf /etc/nginx/sites-available/youraddress && sudo ln -s
-/etc/nginx/sites-available/youraddress /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx`.
+nginx: `sudo cp deploy/nginx.estateinfo.conf /etc/nginx/sites-available/estateinfo && sudo ln -s
+/etc/nginx/sites-available/estateinfo /etc/nginx/sites-enabled/ && sudo nginx -t && sudo systemctl reload nginx`.
 Add the TLS `listen 443 ssl` block with the Cloudflare origin cert (or run `certbot --nginx` with the DNS plugin).
 Uploads live in the `uploads` Docker volume; back it up with the database. To use S3 instead, set the `S3_*`
 vars and `STORAGE_DRIVER=s3` (the app signs uploads itself, no SDK needed).
@@ -45,7 +45,7 @@ UltraMsg links a normal WhatsApp number (no Meta business verification). One ins
    (Linked devices → Link a device). Keep the phone online and charged; UltraMsg needs the session alive.
 3. Instance page → copy **Instance ID** and **Token** into `.env.production` as `ULTRAMSG_INSTANCE_ID` and `ULTRAMSG_TOKEN`; set `WHATSAPP_PROVIDER=ultramsg`.
 4. Instance → Settings → Webhooks:
-   - Webhook URL: `https://youraddress.in/api/whatsapp/webhook`
+   - Webhook URL: `https://estateinfo.in/api/whatsapp/webhook`
    - Enable **Webhook on Received** (message_received). Leave "sent"/"ack" events off.
    - Save. UltraMsg does not sign webhooks; the app rejects bodies whose `instanceId` does not match yours.
 5. Restart the app (`docker compose up -d`) and test: from another phone send "Hi" to the intake number.
@@ -63,11 +63,11 @@ every listing open, Contact on WhatsApp/Call taps, deduplicated by event_id. No 
 
 ## 5. Daily report cron
 `crontab -e` on the server and paste `deploy/cron.example` (02:30 UTC = 08:00 IST) with your `CRON_SECRET`.
-Dry run: `curl -X POST -H "x-cron-secret: $CRON_SECRET" "https://youraddress.in/api/cron/daily-report?dryRun=1"`.
+Dry run: `curl -X POST -H "x-cron-secret: $CRON_SECRET" "https://estateinfo.in/api/cron/daily-report?dryRun=1"`.
 
 ## 6. Go-live checklist
 - `DEV_OTP` is **not** set in production (otherwise every OTP is 123456).
 - `APP_SECRET` and `CRON_SECRET` are random.
 - `ANTHROPIC_API_KEY` set; test web intake once.
-- Open https://demo.youraddress.in after `docker compose exec app npx tsx prisma/seed.ts` if you want the demo partner live, or skip the seed for a clean start.
-- Your own login: go to https://youraddress.in/login with your number; the OTP arrives on WhatsApp from the intake number.
+- Open https://demo.estateinfo.in after `docker compose exec app npx tsx prisma/seed.ts` if you want the demo partner live, or skip the seed for a clean start.
+- Your own login: go to https://estateinfo.in/login with your number; the OTP arrives on WhatsApp from the intake number.
