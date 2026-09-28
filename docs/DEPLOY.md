@@ -1,27 +1,27 @@
 # Deploying EstateInfo (estateinfo.in)
 
-Layout: a dedicated **t3.small** (Amazon Linux 2023 or Ubuntu 24.04, Mumbai) runs one container + nginx.
-Database is a new database on the existing **RDS Postgres**. Uploads go to **S3**. The image is built by
-**GitHub Actions** and pushed to GitHub's registry (GHCR); the server only pulls, never builds.
-Cloudflare fronts the domain (wildcard cert, CDN, viewer-city header).
+Layout: a **separate AWS account** (no shared VPC, RDS or Route 53 with PropFocus). One t3.small runs the container + nginx,
+a db.t4g.micro RDS holds the database, uploads go to S3, Route 53 hosts the zone, certbot issues the wildcard certificate.
+The image is built by GitHub Actions and pushed to GHCR; the server only pulls.
 
-## 1. DNS (GoDaddy registrar → Cloudflare DNS)
-1. Cloudflare → Add site → estateinfo.in → Free plan. Copy the two nameservers.
-2. GoDaddy → My Products → estateinfo.in → DNS → Nameservers → Change → paste them.
-3. Cloudflare DNS, both **Proxied** (orange cloud): `A @ <server IP>` and `A * <server IP>` (the wildcard makes rahul.estateinfo.in work).
-4. SSL/TLS → **Full (strict)**; Edge Certificates → Always use HTTPS. SSL/TLS → Origin Server → create an Origin
-   Certificate for `estateinfo.in, *.estateinfo.in` and save the cert + key for nginx (step 3).
-5. Rules → Settings → Managed Transforms → enable **Add visitor location headers** (gives `cf-ipcity` to analytics).
+## 1. DNS (GoDaddy registrar → Route 53)
+1. Create the hosted zone `estateinfo.in` in the new account (the deploy script does this) and note its four NS records.
+2. GoDaddy → My Products → estateinfo.in → DNS → Nameservers → Change → paste the four Route 53 nameservers.
+3. Records `A @` and `A *` point at the instance's Elastic IP (the wildcard makes rahul.estateinfo.in work).
 
-## 2. AWS pieces
-- **EC2**: t3.small, 20 GB gp3, same VPC as RDS. Security group: 443 + 80 from Cloudflare IP ranges only
-  (https://www.cloudflare.com/ips/), 22 from the bastion only. Attach an IAM role with `s3:PutObject/GetObject/DeleteObject`
-  on the bucket (or use access keys in `.env.production`).
-- **RDS**: on the existing PropFocus instance create database `estateinfo` and a user with a strong password.
-  Allow the EC2 security group on 5432. `DATABASE_URL=postgresql://estateinfo:<pw>@<rds-endpoint>:5432/estateinfo?schema=public&sslmode=require`
-- **S3**: bucket `estateinfo-uploads` in ap-south-1, public read for objects (or CloudFront in front). Env:
-  `STORAGE_DRIVER=s3`, `S3_BUCKET`, `S3_REGION=ap-south-1`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`,
-  `S3_PUBLIC_BASE_URL=https://estateinfo-uploads.s3.ap-south-1.amazonaws.com` (or the CloudFront URL).
+## 2. AWS (separate account, nothing shared with PropFocus)
+Region **ap-south-1**, default VPC. Everything below is created by the deploy script from this Mac using the
+`estateinfo` CLI profile; Route 53 hosts the zone, no Cloudflare.
+- **Route 53** hosted zone `estateinfo.in` → `A @` and `A *` to the instance's Elastic IP; GoDaddy nameservers → the zone's four NS.
+- **EC2**: t3.small, Ubuntu 24.04, 20 GB gp3, Elastic IP, IAM role (SSM, Secrets Manager read, S3 bucket RW, Route53 change on the zone
+  for certbot DNS-01). Security group: 80/443 from anywhere, no SSH (managed via Systems Manager Session Manager).
+- **RDS**: Postgres 17, `db.t4g.micro` (free tier for 12 months on a new account), 20 GB, not public, security group allows the instance only.
+  `DATABASE_URL=postgresql://estateinfo:<pw>@<endpoint>:5432/estateinfo?schema=public&sslmode=require`
+- **S3**: bucket `estateinfo-uploads` (ap-south-1), object public-read via bucket policy. `STORAGE_DRIVER=s3` + `S3_*` vars.
+- **Secrets Manager** (the server reads these at start, nothing is pasted into chat or committed):
+  `estateinfo/database-url`, `estateinfo/anthropic-key`, `estateinfo/ghcr-token`, `estateinfo/ultramsg` (`{"instanceId","token","number"}`),
+  `estateinfo/meta` (`{"pixelId","capiToken"}`, optional), `estateinfo/app-secret`, `estateinfo/cron-secret`.
+- **TLS**: certbot with the Route 53 plugin issues `estateinfo.in, *.estateinfo.in` on the instance and renews itself.
 
 ## 3. Server (once)
 ```bash
