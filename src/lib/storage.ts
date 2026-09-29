@@ -5,7 +5,7 @@ import sharp from "sharp";
 
 /**
  * Storage abstraction. "local" writes under ./public/uploads and serves from /uploads/...
- * "s3" is implemented against any S3-compatible endpoint via signed PUT (kept dependency-free).
+ * "s3" uses @aws-sdk/client-s3 with the default credential chain (EC2 instance role in production).
  */
 const DRIVER = process.env.STORAGE_DRIVER ?? "local";
 const LOCAL_ROOT = path.join(process.cwd(), "public", "uploads");
@@ -38,7 +38,13 @@ export async function storeFile(input: Buffer, opts: { ext: string; folder: stri
 }
 
 export async function deleteStored(key: string) {
-  if (DRIVER === "s3") return; // best-effort; S3 lifecycle handles orphans
+  if (DRIVER === "s3") {
+    try {
+      const { S3Client, DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+      await new S3Client({ region: process.env.S3_REGION ?? "ap-south-1" }).send(new DeleteObjectCommand({ Bucket: process.env.S3_BUCKET!, Key: key }));
+    } catch {}
+    return;
+  }
   try {
     await fs.unlink(path.join(LOCAL_ROOT, key));
   } catch {}
@@ -59,39 +65,19 @@ export async function readStored(url: string): Promise<Buffer> {
   return Buffer.from(await res.arrayBuffer());
 }
 
-// ── minimal S3 SigV4 PUT (no SDK) ──
+// ── S3 via the AWS SDK: credentials come from the default chain (instance role on EC2, env vars locally) ──
 async function putS3(key: string, body: Buffer, contentType: string): Promise<string> {
+  const { S3Client, PutObjectCommand } = await import("@aws-sdk/client-s3");
   const bucket = process.env.S3_BUCKET!;
   const region = process.env.S3_REGION ?? "ap-south-1";
-  const endpoint = process.env.S3_ENDPOINT ?? `https://s3.${region}.amazonaws.com`;
-  const accessKey = process.env.S3_ACCESS_KEY_ID!;
-  const secretKey = process.env.S3_SECRET_ACCESS_KEY!;
-  const host = new URL(endpoint).host;
-  const url = `${endpoint}/${bucket}/${key}`;
-  const { createHash, createHmac } = await import("node:crypto");
-  const now = new Date();
-  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
-  const date = amzDate.slice(0, 8);
-  const payloadHash = createHash("sha256").update(body).digest("hex");
-  const headers: Record<string, string> = {
-    host,
-    "content-type": contentType,
-    "x-amz-content-sha256": payloadHash,
-    "x-amz-date": amzDate,
-    "x-amz-acl": "public-read",
-  };
-  const signedHeaders = Object.keys(headers).sort().join(";");
-  const canonical = ["PUT", `/${bucket}/${key}`, "", ...Object.keys(headers).sort().map((h) => `${h}:${headers[h]}`), "", signedHeaders, payloadHash].join("\n");
-  const scope = `${date}/${region}/s3/aws4_request`;
-  const toSign = ["AWS4-HMAC-SHA256", amzDate, scope, createHash("sha256").update(canonical).digest("hex")].join("\n");
-  const kDate = createHmac("sha256", "AWS4" + secretKey).update(date).digest();
-  const kRegion = createHmac("sha256", kDate).update(region).digest();
-  const kService = createHmac("sha256", kRegion).update("s3").digest();
-  const kSigning = createHmac("sha256", kService).update("aws4_request").digest();
-  const signature = createHmac("sha256", kSigning).update(toSign).digest("hex");
-  const auth = `AWS4-HMAC-SHA256 Credential=${accessKey}/${scope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
-  const res = await fetch(url, { method: "PUT", headers: { ...headers, authorization: auth }, body: new Uint8Array(body) });
-  if (!res.ok) throw new Error(`S3 upload failed: ${res.status} ${await res.text()}`);
-  const publicBase = process.env.S3_PUBLIC_BASE_URL ?? `${endpoint}/${bucket}`;
+  const client = new S3Client({
+    region,
+    ...(process.env.S3_ENDPOINT ? { endpoint: process.env.S3_ENDPOINT, forcePathStyle: true } : {}),
+    ...(process.env.S3_ACCESS_KEY_ID && process.env.S3_SECRET_ACCESS_KEY
+      ? { credentials: { accessKeyId: process.env.S3_ACCESS_KEY_ID, secretAccessKey: process.env.S3_SECRET_ACCESS_KEY } }
+      : {}),
+  });
+  await client.send(new PutObjectCommand({ Bucket: bucket, Key: key, Body: body, ContentType: contentType, CacheControl: "public, max-age=31536000, immutable" }));
+  const publicBase = process.env.S3_PUBLIC_BASE_URL ?? `https://${bucket}.s3.${region}.amazonaws.com`;
   return `${publicBase}/${key}`;
 }
