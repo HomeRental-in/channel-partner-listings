@@ -4,7 +4,7 @@ Layout: a **separate AWS account** (no shared VPC, RDS or Route 53 with PropFocu
 a db.t4g.micro RDS holds the database, uploads go to S3, Route 53 hosts the zone, certbot issues the wildcard certificate.
 GitHub Actions builds the image and pushes it to ECR; the server pulls with its instance role.
 
-## 1. DNS (GoDaddy registrar → Route 53)
+## 1. DNS (GoDaddy registrar → Route 53) — DONE 2026-09-29
 1. Create the hosted zone `estateinfo.in` in the new account (the deploy script does this) and note its four NS records.
 2. GoDaddy → My Products → estateinfo.in → DNS → Nameservers → Change → paste the four Route 53 nameservers.
 3. Records `A @` and `A *` point at the instance's Elastic IP (the wildcard makes rahul.estateinfo.in work).
@@ -46,7 +46,7 @@ sudo nginx -t && sudo systemctl reload nginx
 The container runs as a non-root user, applies the Prisma schema on every start (refuses destructive changes),
 and exposes port 3000 on localhost only; nginx is the public face.
 
-## 3b. HTTPS (after the nameserver switch)
+## 3b. HTTPS — DONE 2026-09-29 (wildcard cert valid to 2026-12-28, auto-renews via certbot.timer)
 `sudo /opt/estateinfo/issue-cert.sh` (over SSM) issues the wildcard certificate with certbot's Route 53 plugin and
 switches nginx to HTTPS with an HTTP→HTTPS redirect. Renewal is automatic via the certbot systemd timer.
 
