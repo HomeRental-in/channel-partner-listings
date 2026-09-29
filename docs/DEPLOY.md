@@ -23,7 +23,15 @@ Region **ap-south-1**, default VPC. Everything below is created by the deploy sc
   `estateinfo/meta` (`{"pixelId","capiToken"}`, optional), `estateinfo/app-secret`, `estateinfo/cron-secret`.
 - **TLS**: certbot with the Route 53 plugin issues `estateinfo.in, *.estateinfo.in` on the instance and renews itself.
 
-## 3. Server (once)
+## 3. Server (once) — DONE 2026-09-29
+Live: instance `estateinfo-ec2` (i-05caa43fa30926c0b), Elastic IP **65.0.23.30**, files under `/opt/estateinfo`
+(`docker-compose.prod.yml`, `.env.production`, `deploy.sh`, `issue-cert.sh`). No SSH key: manage it with Systems Manager,
+e.g. `aws ssm start-session --target i-05caa43fa30926c0b` or `aws ssm send-command --instance-ids i-05caa43fa30926c0b --document-name AWS-RunShellScript --parameters commands=["cd /opt/estateinfo && ./deploy.sh"]`.
+The bootstrap lives in the instance user-data; if a fresh instance fails on the first-boot apt lock, re-run
+`bash /var/lib/cloud/instance/scripts/part-001` over SSM. Until GoDaddy points at Route 53 the site is HTTP-only
+(curl with `-H "Host: estateinfo.in" http://65.0.23.30`); the login cookie is Secure, so browser login needs HTTPS.
+
+### Original manual steps (for reference)
 ```bash
 sudo apt update && sudo apt install -y docker.io docker-compose-v2 nginx git      # Ubuntu
 sudo usermod -aG docker $USER && newgrp docker
@@ -37,6 +45,10 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 The container runs as a non-root user, applies the Prisma schema on every start (refuses destructive changes),
 and exposes port 3000 on localhost only; nginx is the public face.
+
+## 3b. HTTPS (after the nameserver switch)
+`sudo /opt/estateinfo/issue-cert.sh` (over SSM) issues the wildcard certificate with certbot's Route 53 plugin and
+switches nginx to HTTPS with an HTTP→HTTPS redirect. Renewal is automatic via the certbot systemd timer.
 
 ## 4. Releasing
 Push to `main` → `.github/workflows/build-image.yml` typechecks, lints, builds the image and pushes
