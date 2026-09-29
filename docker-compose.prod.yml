@@ -1,10 +1,10 @@
-# Production: pull-only. The image is built by GitHub Actions (.github/workflows/build-image.yml).
+# Production: pull-only. GitHub Actions builds the image and pushes it to ECR (no registry tokens; the instance role pulls).
 # Database = RDS (DATABASE_URL in .env.production), uploads = S3 (STORAGE_DRIVER=s3) or the local volume.
-#   docker login ghcr.io -u <github-user> -p <PAT with read:packages>
+#   aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 247839622447.dkr.ecr.ap-south-1.amazonaws.com
 #   docker compose -f docker-compose.prod.yml pull && docker compose -f docker-compose.prod.yml up -d
 services:
   app:
-    image: ghcr.io/homerental-in/channel-partner-listings:${IMAGE_TAG:-latest}
+    image: 247839622447.dkr.ecr.ap-south-1.amazonaws.com/estateinfo:${IMAGE_TAG:-latest}
     restart: unless-stopped
     env_file: .env.production
     ports:

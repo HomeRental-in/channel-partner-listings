@@ -8,10 +8,11 @@ on:
 
 permissions:
   contents: read
-  packages: write
+  id-token: write   # OIDC → assumes the estateinfo-github-actions role, no AWS keys stored in GitHub
 
 env:
-  IMAGE: ghcr.io/${{ github.repository }}
+  AWS_REGION: ap-south-1
+  ECR_REPO: 247839622447.dkr.ecr.ap-south-1.amazonaws.com/estateinfo
 
 jobs:
   check:
@@ -30,16 +31,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          role-to-assume: arn:aws:iam::247839622447:role/estateinfo-github-actions
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - uses: docker/setup-buildx-action@v3
       - id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE }}
+          images: ${{ env.ECR_REPO }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=
@@ -52,7 +53,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # Public values baked into the client bundle. Set these under Settings → Variables → Actions.
+          # Public values baked into the client bundle. Set under Settings → Variables → Actions.
           build-args: |
             NEXT_PUBLIC_ROOT_DOMAIN=${{ vars.NEXT_PUBLIC_ROOT_DOMAIN || 'estateinfo.in' }}
             NEXT_PUBLIC_BRAND_NAME=${{ vars.NEXT_PUBLIC_BRAND_NAME || 'EstateInfo' }}

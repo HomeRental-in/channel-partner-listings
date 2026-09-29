@@ -2,7 +2,7 @@
 
 Layout: a **separate AWS account** (no shared VPC, RDS or Route 53 with PropFocus). One t3.small runs the container + nginx,
 a db.t4g.micro RDS holds the database, uploads go to S3, Route 53 hosts the zone, certbot issues the wildcard certificate.
-The image is built by GitHub Actions and pushed to GHCR; the server only pulls.
+GitHub Actions builds the image and pushes it to ECR; the server pulls with its instance role.
 
 ## 1. DNS (GoDaddy registrar → Route 53)
 1. Create the hosted zone `estateinfo.in` in the new account (the deploy script does this) and note its four NS records.
@@ -19,7 +19,7 @@ Region **ap-south-1**, default VPC. Everything below is created by the deploy sc
   `DATABASE_URL=postgresql://estateinfo:<pw>@<endpoint>:5432/estateinfo?schema=public&sslmode=require`
 - **S3**: bucket `estateinfo-uploads` (ap-south-1), object public-read via bucket policy. `STORAGE_DRIVER=s3` + `S3_*` vars.
 - **Secrets Manager** (the server reads these at start, nothing is pasted into chat or committed):
-  `estateinfo/database-url`, `estateinfo/openai-key`, `estateinfo/ghcr-token`, `estateinfo/ultramsg` (`{"instanceId","token","number"}`),
+  `estateinfo/database-url`, `estateinfo/app-secret`; the OpenAI key is the shared `propfocus-openai-key`; `estateinfo/ultramsg` (`{"instanceId","token","number"}`),
   `estateinfo/meta` (`{"pixelId","capiToken"}`, optional), `estateinfo/app-secret`, `estateinfo/cron-secret`.
 - **TLS**: certbot with the Route 53 plugin issues `estateinfo.in, *.estateinfo.in` on the instance and renews itself.
 
@@ -29,8 +29,6 @@ sudo apt update && sudo apt install -y docker.io docker-compose-v2 nginx git    
 sudo usermod -aG docker $USER && newgrp docker
 git clone git@github.com:HomeRental-in/channel-partner-listings.git && cd channel-partner-listings
 cp .env.production.example .env.production && nano .env.production               # fill every value
-# GHCR is private: create a GitHub PAT (classic) with read:packages, then
-docker login ghcr.io -u <github-user>                                              # paste the PAT as password
 ./deploy/deploy.sh                                                                 # pulls :latest, starts, applies schema
 sudo cp deploy/nginx.estateinfo.conf /etc/nginx/sites-available/estateinfo
 sudo ln -s /etc/nginx/sites-available/estateinfo /etc/nginx/sites-enabled/ && sudo rm -f /etc/nginx/sites-enabled/default
@@ -42,7 +40,7 @@ and exposes port 3000 on localhost only; nginx is the public face.
 
 ## 4. Releasing
 Push to `main` → `.github/workflows/build-image.yml` typechecks, lints, builds the image and pushes
-`ghcr.io/homerental-in/channel-partner-listings:latest` (+ the commit SHA tag). Then on the server:
+`247839622447.dkr.ecr.ap-south-1.amazonaws.com/estateinfo:latest` (+ the commit SHA tag). Then on the server:
 ```bash
 ./deploy/deploy.sh
 ```
