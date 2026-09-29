@@ -8,7 +8,11 @@ import { parseINR } from "./format";
  * All model calls live here (OpenAI Responses API with structured outputs).
  * Credentials: OPENAI_API_KEY. Model: OPENAI_MODEL (default gpt-4.1 — vision + PDF input + strict JSON schema).
  */
-const client = new OpenAI();
+let _client: OpenAI | null = null;
+/** Lazy so `next build` (no OPENAI_API_KEY at build time) never constructs the client. */
+function client(): OpenAI {
+  return (_client ??= new OpenAI());
+}
 export const MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1";
 
 function refused(res: { output_parsed: unknown; output: { type: string }[] }): boolean {
@@ -72,7 +76,7 @@ export async function extractListing(input: { text: string; imageUrls?: string[]
   for (const img of (input.imageBuffers ?? []).slice(0, 8)) content.push({ type: "input_image", image_url: `data:${img.mediaType};base64,${img.data.toString("base64")}`, detail: "auto" });
   content.push({ type: "input_text", text: `Channel partner's message:\n\n${input.text || "(no text, photos only)"}` });
 
-  const res = await client.responses.parse({
+  const res = await client().responses.parse({
     model: MODEL,
     instructions: SYSTEM_EXTRACT,
     input: [{ role: "user", content }],
@@ -89,7 +93,7 @@ export const RewriteOut = z.object({ description: z.string(), highlights: z.arra
 
 /** Regenerate description + highlights from the (possibly edited) structured details. */
 export async function rewriteDescription(details: Record<string, unknown>): Promise<z.infer<typeof RewriteOut>> {
-  const res = await client.responses.parse({
+  const res = await client().responses.parse({
     model: MODEL,
     instructions: "Write a 120-180 word buyer-facing property description in clear, warm English for Indian buyers, plus 3-6 highlights (max 6 words each). Use only the facts given. No emojis, no superlatives you cannot back with a fact.",
     input: `Property details (JSON):\n${JSON.stringify(details, null, 2)}`,
@@ -121,7 +125,7 @@ export type ExtractedProject = z.infer<typeof ExtractedProject>;
 
 /** Ingest a developer brochure PDF into a Project template. */
 export async function extractProjectFromBrochure(pdf: Buffer, hint?: string): Promise<ExtractedProject> {
-  const res = await client.responses.parse({
+  const res = await client().responses.parse({
     model: MODEL,
     instructions: "You read Indian real-estate developer brochures and extract a structured project template. Prices in rupees. Sizes in sq ft. Do not invent numbers; use null when absent.",
     input: [
