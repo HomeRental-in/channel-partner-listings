@@ -42,3 +42,4 @@ next-env.d.ts
 .env
 /public/uploads
 .env.production
+.tmp-photos
