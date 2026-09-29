@@ -83,14 +83,25 @@ export const ultramsgProvider: WhatsappProvider = {
   },
   parseWebhook(body) {
     const b = body as UltraWebhook | null;
-    if (!b || b.event_type !== "message_received" || !b.data) return [];
+    if (!b || b.event_type !== "message_received" || !b.data) {
+      console.warn("[whatsapp:ultramsg] webhook ignored", JSON.stringify({ event_type: b?.event_type, hasData: !!b?.data, keys: b ? Object.keys(b) : [] }));
+      return [];
+    }
     // UltraMsg does not sign webhooks; the instance id in the body is the only shared secret.
+    // Accept "instance142725" and "142725" forms, since the API path and the webhook payload differ.
+    const norm = (v: unknown) => String(v ?? "").trim().toLowerCase().replace(/^instance/, "");
     const expected = process.env.ULTRAMSG_INSTANCE_ID;
-    if (expected && b.instanceId && b.instanceId !== expected) return [];
+    if (expected && b.instanceId && norm(b.instanceId) !== norm(expected)) {
+      console.warn("[whatsapp:ultramsg] webhook ignored: instance mismatch", JSON.stringify({ got: b.instanceId }));
+      return [];
+    }
     const d = b.data;
     if (d.fromMe) return [];
     const from = toE164(d.from);
-    if (!from) return [];
+    if (!from) {
+      console.warn("[whatsapp:ultramsg] webhook ignored: bad from", JSON.stringify({ from: d.from, type: d.type }));
+      return [];
+    }
     const kind = kindOf(d.type);
     const isMedia = kind === "image" || kind === "video" || kind === "document" || kind === "audio";
     const mediaUrl = isMedia ? d.media || (d.body && /^https?:\/\//.test(d.body) ? d.body : undefined) : undefined;
