@@ -14,7 +14,7 @@ npm run dev                     # http://localhost:3000, CP sites at http://demo
 ```
 Login at `/login` with any phone; in dev the OTP is `DEV_OTP` from `.env` (default 123456).
 WhatsApp intake can be simulated at `/dev/whatsapp` (development only) without any provider credentials.
-AI calls use the Anthropic SDK; set `ANTHROPIC_API_KEY` or run `ant auth login`.
+AI calls use the OpenAI Responses API; set `OPENAI_API_KEY` (model via `OPENAI_MODEL`, default gpt-4.1).
 
 ## Environment
 See `.env.example`. Providers: `WHATSAPP_PROVIDER=mock|meta|ultramsg`, `STORAGE_DRIVER=local|s3`,

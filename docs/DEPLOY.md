@@ -19,7 +19,7 @@ Region **ap-south-1**, default VPC. Everything below is created by the deploy sc
   `DATABASE_URL=postgresql://estateinfo:<pw>@<endpoint>:5432/estateinfo?schema=public&sslmode=require`
 - **S3**: bucket `estateinfo-uploads` (ap-south-1), object public-read via bucket policy. `STORAGE_DRIVER=s3` + `S3_*` vars.
 - **Secrets Manager** (the server reads these at start, nothing is pasted into chat or committed):
-  `estateinfo/database-url`, `estateinfo/anthropic-key`, `estateinfo/ghcr-token`, `estateinfo/ultramsg` (`{"instanceId","token","number"}`),
+  `estateinfo/database-url`, `estateinfo/openai-key`, `estateinfo/ghcr-token`, `estateinfo/ultramsg` (`{"instanceId","token","number"}`),
   `estateinfo/meta` (`{"pixelId","capiToken"}`, optional), `estateinfo/app-secret`, `estateinfo/cron-secret`.
 - **TLS**: certbot with the Route 53 plugin issues `estateinfo.in, *.estateinfo.in` on the instance and renews itself.
 
@@ -72,7 +72,7 @@ Dry run: `curl -X POST -H "x-cron-secret: $CRON_SECRET" "https://estateinfo.in/a
 
 ## 8. Go-live checklist
 - `DEV_OTP` not set in production; `APP_SECRET` and `CRON_SECRET` random (`openssl rand -hex 32`).
-- `ANTHROPIC_API_KEY` set; create one listing via the web form to confirm extraction.
+- `OPENAI_API_KEY` set; create one listing via the web form to confirm extraction.
 - RDS automated backups on; S3 versioning on.
 - First login: https://estateinfo.in/login with your number — the OTP arrives on WhatsApp from the intake number.
 - Optional demo partner: `docker compose -f docker-compose.prod.yml exec app node cli/node_modules/prisma/build/index.js --version` proves the CLI;

@@ -1,14 +1,19 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import type { ResponseInputContent } from "openai/resources/responses/responses";
 import { z } from "zod";
 import { parseINR } from "./format";
 
 /**
- * All Claude calls live here. Model: claude-opus-5 (structured outputs via messages.parse).
- * Credentials resolve from ANTHROPIC_API_KEY or an `ant auth login` profile.
+ * All model calls live here (OpenAI Responses API with structured outputs).
+ * Credentials: OPENAI_API_KEY. Model: OPENAI_MODEL (default gpt-4.1 — vision + PDF input + strict JSON schema).
  */
-const client = new Anthropic();
-export const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-opus-5";
+const client = new OpenAI();
+export const MODEL = process.env.OPENAI_MODEL ?? "gpt-4.1";
+
+function refused(res: { output_parsed: unknown; output: { type: string }[] }): boolean {
+  return !res.output_parsed || res.output.some((o) => o.type === "refusal");
+}
 
 export const PriceLine = z.object({
   label: z.string().describe("e.g. '3 BHK', 'Total', 'Per sq ft', 'Rent / month'"),
@@ -49,7 +54,7 @@ export const ExtractedListing = z.object({
   pincode: z.string().nullable(),
   reraNumber: z.string().nullable(),
   description: z.string().describe("120-180 word buyer-facing paragraph in clear English. No emojis. Do not invent facts."),
-  highlights: z.array(z.string()).max(6).describe("3-6 short callouts, max 6 words each"),
+  highlights: z.array(z.string()).describe("3-6 short callouts, max 6 words each"),
   features: z.array(FeatureSection).describe("Grouped label/value tiles: 'Space & Layout', 'Building & Lifestyle', 'Connectivity'. Values 2-4 words."),
   amenities: z.array(z.string()).describe("Standard amenity names: Lift, Power Backup, Swimming Pool, Gymnasium, Clubhouse, Kids Play Area, Security/CCTV, Gated Community..."),
   neighbourhood: z.array(FeatureItem).describe("Nearby places with travel time or distance, e.g. {label:'IGI Airport', value:'30 min'}"),
@@ -62,38 +67,36 @@ const SYSTEM_EXTRACT = `You turn a real-estate channel partner's rough WhatsApp 
 Rules: never invent facts that are not in the message or clearly visible in photos. Convert lakh/crore to rupees. Convert sq yard (×9) / sq metre (×10.764) / gaz (×9) to sq ft. Keep the CP's project name and locality spelling. Write the description in polished English even if the input is Hinglish. If price is missing, set price null and add 'price' to missing.`;
 
 export async function extractListing(input: { text: string; imageUrls?: string[]; imageBuffers?: { data: Buffer; mediaType: "image/jpeg" | "image/png" | "image/webp" }[] }): Promise<ExtractedListing> {
-  const content: Anthropic.ContentBlockParam[] = [];
-  for (const url of (input.imageUrls ?? []).slice(0, 8)) content.push({ type: "image", source: { type: "url", url } });
-  for (const img of (input.imageBuffers ?? []).slice(0, 8)) content.push({ type: "image", source: { type: "base64", media_type: img.mediaType, data: img.data.toString("base64") } });
-  content.push({ type: "text", text: `Channel partner's message:\n\n${input.text || "(no text, photos only)"}` });
+  const content: ResponseInputContent[] = [];
+  for (const url of (input.imageUrls ?? []).slice(0, 8)) content.push({ type: "input_image", image_url: url, detail: "auto" });
+  for (const img of (input.imageBuffers ?? []).slice(0, 8)) content.push({ type: "input_image", image_url: `data:${img.mediaType};base64,${img.data.toString("base64")}`, detail: "auto" });
+  content.push({ type: "input_text", text: `Channel partner's message:\n\n${input.text || "(no text, photos only)"}` });
 
-  const res = await client.messages.parse({
+  const res = await client.responses.parse({
     model: MODEL,
-    max_tokens: 16000,
-    system: SYSTEM_EXTRACT,
-    messages: [{ role: "user", content }],
-    output_config: { format: zodOutputFormat(ExtractedListing) },
+    instructions: SYSTEM_EXTRACT,
+    input: [{ role: "user", content }],
+    text: { format: zodTextFormat(ExtractedListing, "listing") },
   });
-  if (res.stop_reason === "refusal" || !res.parsed_output) throw new Error("AI extraction failed");
-  const out = res.parsed_output;
+  if (refused(res)) throw new Error("AI extraction failed");
+  const out = res.output_parsed!;
   // Defensive normalisation for lakh/crore written as text in priceLines
   out.priceLines = out.priceLines.map((p) => ({ ...p, amount: p.amount < 1000 && p.note ? (parseINR(p.note) ?? p.amount) : p.amount }));
   return out;
 }
 
-export const RewriteOut = z.object({ description: z.string(), highlights: z.array(z.string()).max(6) });
+export const RewriteOut = z.object({ description: z.string(), highlights: z.array(z.string()) });
 
 /** Regenerate description + highlights from the (possibly edited) structured details. */
 export async function rewriteDescription(details: Record<string, unknown>): Promise<z.infer<typeof RewriteOut>> {
-  const res = await client.messages.parse({
+  const res = await client.responses.parse({
     model: MODEL,
-    max_tokens: 4000,
-    system: "Write a 120-180 word buyer-facing property description in clear, warm English for Indian buyers, plus 3-6 highlights (max 6 words each). Use only the facts given. No emojis, no superlatives you cannot back with a fact.",
-    messages: [{ role: "user", content: `Property details (JSON):\n${JSON.stringify(details, null, 2)}` }],
-    output_config: { format: zodOutputFormat(RewriteOut) },
+    instructions: "Write a 120-180 word buyer-facing property description in clear, warm English for Indian buyers, plus 3-6 highlights (max 6 words each). Use only the facts given. No emojis, no superlatives you cannot back with a fact.",
+    input: `Property details (JSON):\n${JSON.stringify(details, null, 2)}`,
+    text: { format: zodTextFormat(RewriteOut, "rewrite") },
   });
-  if (res.stop_reason === "refusal" || !res.parsed_output) throw new Error("AI rewrite failed");
-  return res.parsed_output;
+  if (refused(res)) throw new Error("AI rewrite failed");
+  return res.output_parsed!;
 }
 
 export const ExtractedProject = z.object({
@@ -106,7 +109,7 @@ export const ExtractedProject = z.object({
   locality: z.string().nullable(),
   landmark: z.string().nullable(),
   description: z.string().describe("150-220 words, buyer-facing"),
-  highlights: z.array(z.string()).max(6),
+  highlights: z.array(z.string()),
   configurations: z.array(z.object({ type: z.string(), sizeSqft: z.number().nullable(), priceFrom: z.number().nullable(), priceTo: z.number().nullable(), note: z.string().nullable() })),
   paymentPlan: z.array(z.object({ milestone: z.string(), percent: z.number().nullable() })),
   amenities: z.array(z.string()),
@@ -118,23 +121,22 @@ export type ExtractedProject = z.infer<typeof ExtractedProject>;
 
 /** Ingest a developer brochure PDF into a Project template. */
 export async function extractProjectFromBrochure(pdf: Buffer, hint?: string): Promise<ExtractedProject> {
-  const res = await client.messages.parse({
+  const res = await client.responses.parse({
     model: MODEL,
-    max_tokens: 16000,
-    system: "You read Indian real-estate developer brochures and extract a structured project template. Prices in rupees. Sizes in sq ft. Do not invent numbers; use null when absent.",
-    messages: [
+    instructions: "You read Indian real-estate developer brochures and extract a structured project template. Prices in rupees. Sizes in sq ft. Do not invent numbers; use null when absent.",
+    input: [
       {
         role: "user",
         content: [
-          { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf.toString("base64") } },
-          { type: "text", text: `Extract the project template.${hint ? ` Hint from the channel partner: ${hint}` : ""}` },
+          { type: "input_file", filename: "brochure.pdf", file_data: `data:application/pdf;base64,${pdf.toString("base64")}` },
+          { type: "input_text", text: `Extract the project template.${hint ? ` Hint from the channel partner: ${hint}` : ""}` },
         ],
       },
     ],
-    output_config: { format: zodOutputFormat(ExtractedProject) },
+    text: { format: zodTextFormat(ExtractedProject, "project") },
   });
-  if (res.stop_reason === "refusal" || !res.parsed_output) throw new Error("AI brochure extraction failed");
-  return res.parsed_output;
+  if (refused(res)) throw new Error("AI brochure extraction failed");
+  return res.output_parsed!;
 }
 
 /** Cheap heuristic listing quality score (0-100) with hints; no AI call. */

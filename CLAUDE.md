@@ -7,7 +7,7 @@ Read `SPEC.md` (product), `DESIGN.md` (visual language), `docs/NEXTJS16.md` (fra
 
 ## Stack
 Next.js 16 App Router (Turbopack) · React 19 · TypeScript · Tailwind v4 (tokens in `src/app/globals.css`) ·
-Prisma 6 + Postgres (`DATABASE_URL`) · `@anthropic-ai/sdk` (`src/lib/ai.ts`) · GSAP + Lenis for motion ·
+Prisma 6 + Postgres (`DATABASE_URL`) · `openai` (`src/lib/ai.ts`) · GSAP + Lenis for motion ·
 lucide-react icons · sharp · @react-pdf/renderer · jose · nanoid · zod · date-fns · clsx.
 Do **not** add dependencies; everything needed is installed. Do not edit `package.json` or `prisma/schema.prisma`
 without coordinating (schema changes: add fields only, then run `npx prisma db push && npx prisma generate`).
