@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { BRAND, ROOT_DOMAIN } from "@/lib/site";
+import { BRAND, ROOT_DOMAIN, WHATSAPP_DISPLAY, whatsappStartUrl } from "@/lib/site";
+import { CITIES } from "@/lib/seo/cities";
 
 const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
   {
@@ -10,12 +11,15 @@ const COLUMNS: { title: string; links: { href: string; label: string }[] }[] = [
       { href: "/#features", label: "Everything included" },
       { href: "/#themes", label: "Themes" },
       { href: "/sample", label: "Sample listing" },
-      { href: "/login", label: "Create a free listing" },
+      { href: whatsappStartUrl(), label: "Create a free listing" },
     ],
   },
   {
     title: "Company",
     links: [
+      { href: "/partners", label: "Founding Partners" },
+      { href: "/channel-partners", label: "Cities" },
+      { href: "/answers", label: "Answers" },
       { href: "/#faq", label: "FAQ" },
       { href: "/login", label: "Log in" },
       { href: "/#who", label: "Who it's for" },
@@ -45,6 +49,12 @@ export default function Footer() {
               Free listing pages for channel partners. Send a WhatsApp message, get a link buyers trust, share it everywhere.
             </p>
             <p className="mt-6 text-sm">
+              <span className="mk-muted">WhatsApp:</span>{" "}
+              <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="chip font-medium">
+                {WHATSAPP_DISPLAY}
+              </a>
+            </p>
+            <p className="mt-3 text-sm">
               <span className="mk-muted">Your site:</span>{" "}
               <span className="chip font-medium">yourname.{ROOT_DOMAIN}</span>
             </p>
@@ -55,8 +65,8 @@ export default function Footer() {
               <ul className="flex flex-col gap-2.5">
                 {col.links.map((l) => (
                   <li key={l.href + l.label}>
-                    {l.href.startsWith("/#") ? (
-                      <a href={l.href} className="text-base font-medium">
+                    {l.href.startsWith("/#") || l.href.startsWith("http") ? (
+                      <a href={l.href} className="text-base font-medium" {...(l.href.startsWith("http") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
                         {l.label}
                       </a>
                     ) : (
@@ -70,7 +80,19 @@ export default function Footer() {
             </div>
           ))}
         </div>
-        <div className="hairline mt-12 flex flex-col gap-3 pt-6 text-sm md:flex-row md:items-center md:justify-between">
+        <nav className="hairline mt-12 pt-6" aria-label="Cities">
+          <h3 className="eyebrow mb-3">Channel partners by city</h3>
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm">
+            {CITIES.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/channel-partners/${c.slug}`} className="mk-muted">
+                  {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+        <div className="hairline mt-6 flex flex-col gap-3 pt-6 text-sm md:flex-row md:items-center md:justify-between">
           <p className="mk-muted">Free listing software for channel partners. Not a broker or marketplace.</p>
           <p className="mk-muted">
             © {year} {BRAND}. We never collect buyer names or phone numbers.

@@ -17,6 +17,7 @@ const Patch = z.object({
   city: nullableStr(60),
   username: z.string().optional(),
   avatarUrl: nullableStr(500),
+  logoUrl: nullableStr(500),
   reraNumber: nullableStr(60),
   bio: nullableStr(300),
   yearsExperience: z.number().int().min(0).max(60).nullable().optional(),
@@ -48,6 +49,7 @@ export async function updateProfile(raw: ProfilePatch): Promise<ActionResult<{ u
   if ("agencyName" in p) data.agencyName = p.agencyName ?? null;
   if ("city" in p) data.city = p.city ?? null;
   if ("avatarUrl" in p) data.avatarUrl = p.avatarUrl ?? null;
+  if ("logoUrl" in p) data.logoUrl = p.logoUrl ?? null;
   if ("reraNumber" in p) data.reraNumber = p.reraNumber ?? null;
   if ("bio" in p) data.bio = p.bio ?? null;
   if ("yearsExperience" in p) data.yearsExperience = p.yearsExperience ?? null;

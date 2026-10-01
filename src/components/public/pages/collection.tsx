@@ -12,7 +12,7 @@ export function collectionMetadata(c: PublicCollection | null, viewerName: strin
   if (!c) return { title: "Collection not found", robots: { index: false } };
   const title = `${viewerName ? `For ${viewerName} · ` : ""}${c.title}`;
   const n = c.listings.length;
-  const description = c.description?.trim() || `${n} propert${n === 1 ? "y" : "ies"} picked by ${c.broker.name}.`;
+  const description = c.description?.trim() || `${n} propert${n === 1 ? "y" : "ies"} ${c.broker.hasName ? `picked by ${c.broker.name}` : "picked for you"}.`;
   const cover = c.listings.find((l) => l.cover)?.cover;
   return {
     title,

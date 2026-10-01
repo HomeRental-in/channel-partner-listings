@@ -8,6 +8,9 @@ export type PublicBroker = {
   name: string;
   agencyName: string | null;
   avatarUrl: string | null;
+  logoUrl: string | null;        // brand / agency logo for the page header (falls back to agency name, then name)
+  hasName: boolean;              // false when the CP has not set a name yet: never print a placeholder name to buyers
+  headerLabel: string;           // text for the header when there is no logo: agency name, else name, else ""
   phone: string | null;          // for Call (already E.164)
   whatsapp: string | null;       // for WhatsApp
   reraNumber: string | null;

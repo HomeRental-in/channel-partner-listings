@@ -1,17 +1,41 @@
 /* eslint-disable jsx-a11y/alt-text -- react-pdf <Image> is not a DOM element */
 import React from "react";
+import sharp from "sharp";
 import { Document, Page, View, Text, Image, StyleSheet, Svg, Rect, Font, renderToBuffer } from "@react-pdf/renderer";
 import type { PublicListing } from "@/components/themes/types";
 import { BRAND } from "@/lib/site";
 import { formatINR } from "@/lib/format";
+import { readStored } from "@/lib/storage";
 import { encodeQr, qrRects, type QrMatrix } from "./qr";
 import { loadPhotos, photoAsJpeg } from "./images";
 import { paletteFor, pdfText, TRANSACTION_LABEL, CATEGORY_LABEL, type OutputPalette } from "./theme";
 
 Font.registerHyphenationCallback((w) => [w]);
 
-type Input = { data: PublicListing; photos: Buffer[]; avatar: Buffer | null; qr: QrMatrix; p: OutputPalette };
+type Logo = { buf: Buffer; width: number; height: number };
+type Input = { data: PublicListing; photos: Buffer[]; avatar: Buffer | null; logo: Logo | null; qr: QrMatrix; p: OutputPalette };
 const img = (b: Buffer) => ({ data: b, format: "jpg" as const });
+
+/** Brand logo as a JPEG flattened onto white (logos are usually transparent WebP, which JPEG would turn black). */
+async function loadLogo(url: string): Promise<Logo | null> {
+  try {
+    const raw = await readStored(url);
+    const { data, info } = await sharp(raw).rotate().resize({ width: 560, height: 240, fit: "inside", withoutEnlargement: true }).flatten({ background: "#ffffff" }).jpeg({ quality: 90 }).toBuffer({ resolveWithObject: true });
+    return info.width && info.height ? { buf: data, width: info.width, height: info.height } : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Logo on a white rounded chip (stays legible on the dark Midnight palette), fitted into maxW × maxH points. */
+function LogoChip({ logo, maxW = 150, maxH = 34 }: { logo: Logo; maxW?: number; maxH?: number }) {
+  const scale = Math.min(maxW / logo.width, maxH / logo.height);
+  return (
+    <View style={{ alignSelf: "flex-start", backgroundColor: "#ffffff", borderRadius: 6, paddingVertical: 5, paddingHorizontal: 8, marginBottom: 8 }}>
+      <Image src={img(logo.buf)} style={{ width: logo.width * scale, height: logo.height * scale }} />
+    </View>
+  );
+}
 
 const s = StyleSheet.create({
   page: { fontFamily: "Helvetica", fontSize: 10.5, color: "#161412", paddingBottom: 40 },
@@ -71,7 +95,7 @@ function CoverPage({ data, photos, avatar, p }: Input) {
         <View style={[s.strip, { borderTopColor: p.line }]}>
           {b.card.showNamePhoto && avatar ? <Image src={img(avatar)} style={s.avatar} /> : null}
           <View>
-            {b.card.showNamePhoto ? <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11 }}>{b.name}</Text> : null}
+            {b.card.showNamePhoto && b.hasName ? <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 11 }}>{b.name}</Text> : null}
             <Text style={{ fontSize: 9, color: p.muted }}>
               {[b.card.showAgency ? b.agencyName : null, b.card.showCall ? b.phone : null].filter(Boolean).join("  ·  ")}
             </Text>
@@ -217,7 +241,7 @@ function QrSvg({ qr, size, color }: { qr: QrMatrix; size: number; color: string 
   );
 }
 
-function BrokerPage({ data, avatar, qr, p }: Input) {
+function BrokerPage({ data, avatar, logo, qr, p }: Input) {
   const b = data.broker;
   const wa = b.whatsapp ?? b.phone;
   return (
@@ -227,8 +251,9 @@ function BrokerPage({ data, avatar, qr, p }: Input) {
         <View style={[s.card, { backgroundColor: p.soft }]}>
           {b.card.showNamePhoto && avatar ? <Image src={img(avatar)} style={s.bigAvatar} /> : null}
           <View style={{ flexGrow: 1 }}>
-            {b.card.showNamePhoto ? <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 18, marginBottom: 3 }}>{b.name}</Text> : null}
-            {b.card.showAgency && b.agencyName ? <Text style={{ fontSize: 11, marginBottom: 2 }}>{b.agencyName}</Text> : null}
+            {b.card.showAgency && logo ? <LogoChip logo={logo} /> : null}
+            {b.card.showNamePhoto && b.hasName ? <Text style={{ fontFamily: "Helvetica-Bold", fontSize: 18, marginBottom: 3 }}>{b.name}</Text> : null}
+            {b.card.showAgency && b.agencyName && !(b.card.showNamePhoto && b.agencyName === b.name) ? <Text style={{ fontSize: 11, marginBottom: 2 }}>{b.agencyName}</Text> : null}
             {b.reraNumber ? <Text style={{ fontSize: 9, color: p.muted, marginBottom: 6 }}>RERA {b.reraNumber}</Text> : null}
             {b.card.showCall && b.phone ? <Text style={{ fontSize: 11 }}>Call: {b.phone}</Text> : null}
             {b.card.showWhatsApp && wa ? <Text style={{ fontSize: 11 }}>WhatsApp: {wa}</Text> : null}
@@ -256,7 +281,7 @@ function BrokerPage({ data, avatar, qr, p }: Input) {
 
 function BrochureDocument(input: Input) {
   return (
-    <Document title={input.data.title} author={input.data.broker.name} producer={BRAND} creator={BRAND}>
+    <Document title={input.data.title} author={input.data.broker.hasName ? input.data.broker.name : BRAND} producer={BRAND} creator={BRAND}>
       <CoverPage {...input} />
       <DetailsPage {...input} />
       <GalleryPage {...input} />
@@ -270,13 +295,14 @@ const cache = new Map<string, { buf: Buffer; at: number }>();
 const TTL = 10 * 60 * 1000;
 
 export async function renderBrochure(data: PublicListing): Promise<Buffer> {
-  const [photos, avatar] = await Promise.all([
+  const [photos, avatar, logo] = await Promise.all([
     loadPhotos(data.photos.slice(0, 7).map((p) => p.url)),
     data.broker.avatarUrl ? photoAsJpeg(data.broker.avatarUrl, 300) : Promise.resolve(null),
+    data.broker.logoUrl && data.broker.card.showAgency ? loadLogo(data.broker.logoUrl) : Promise.resolve(null),
   ]);
   const qr = encodeQr(data.url);
   const p = paletteFor(data.theme);
-  return renderToBuffer(<BrochureDocument data={data} photos={photos} avatar={avatar} qr={qr} p={p} />);
+  return renderToBuffer(<BrochureDocument data={data} photos={photos} avatar={avatar} logo={logo} qr={qr} p={p} />);
 }
 
 export async function getBrochurePdf(data: PublicListing, cacheKey: string): Promise<Buffer> {

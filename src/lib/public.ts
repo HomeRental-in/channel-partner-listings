@@ -9,7 +9,10 @@ function brokerFrom(u: User, activeListings: number, cardOverride?: unknown): Pu
   return {
     id: u.id,
     username: u.username,
-    name: u.name ?? "Property Advisor",
+    name: u.name?.trim() || u.agencyName?.trim() || "Your advisor",
+    hasName: Boolean(u.name?.trim() || u.agencyName?.trim()),
+    headerLabel: u.agencyName?.trim() || u.name?.trim() || "",
+    logoUrl: u.logoUrl,
     agencyName: u.agencyName,
     avatarUrl: u.avatarUrl,
     phone: u.phone,

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
+import { WHATSAPP_DISPLAY, whatsappStartUrl } from "@/lib/site";
 
 export default function FinalCta() {
   return (
@@ -12,13 +13,13 @@ export default function FinalCta() {
               Your next enquiry deserves a page, not a paragraph.
             </h2>
             <p className="mk-body mt-5 max-w-xl text-white/70">
-              Create your first listing on WhatsApp or the web. No card, no trial, no credits. Just a link buyers trust.
+              Say Hi on WhatsApp to <span className="font-medium text-white">{WHATSAPP_DISPLAY}</span> and send your first property. No card, no trial, no credits. Just a link buyers trust.
             </p>
           </div>
           <div className="flex flex-col gap-3 md:items-end">
-            <Link href="/login" className="btn bg-white text-base text-ink md:text-lg">
+            <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="btn bg-white text-base text-ink md:text-lg">
               Create a free listing <span aria-hidden>👋</span>
-            </Link>
+            </a>
             <Link href="/sample" className="btn border border-white/25 text-base text-white md:text-lg">
               See a sample listing <ArrowUpRight size={18} />
             </Link>

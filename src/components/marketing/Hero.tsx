@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowDown } from "lucide-react";
+import { WHATSAPP_DISPLAY, whatsappStartUrl } from "@/lib/site";
 
 const HEADLINE = "Turn a WhatsApp message into a listing buyers trust.";
 const MARQUEE = ["/ UNLIMITED LISTINGS, FREE", "/ < 60 SEC TO A LINK", "/ 3 THEMES", "/ PDF + STORY VIDEO", "/ PROJECT PAGES FOR CPS"];
@@ -23,13 +24,20 @@ export default function Hero() {
           a PDF brochure and a story video — ready to forward to every buyer. Unlimited listings, free forever. No credits, no plans.
         </p>
         <div className="mk-fade mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link href="/login" className="btn btn-dark text-base md:text-lg">
+          <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-dark text-base md:text-lg">
             Create a free listing <span aria-hidden>👋</span>
-          </Link>
+          </a>
           <Link href="/login" className="btn bg-white text-base md:text-lg">
             Log in
           </Link>
         </div>
+        <p className="mk-fade mk-muted mt-5 text-base">
+          Just say Hi on WhatsApp to{" "}
+          <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="font-medium text-ink underline decoration-black/20 underline-offset-4">
+            {WHATSAPP_DISPLAY}
+          </a>{" "}
+          — your first listing starts in the chat.
+        </p>
         <div className="mk-fade mt-12 flex justify-center md:mt-16">
           <a href="#who" className="mk-scroll-btn" aria-label="Scroll down">
             <ArrowDown size={22} />

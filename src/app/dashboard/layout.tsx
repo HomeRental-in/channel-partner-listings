@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { BRAND, ROOT_DOMAIN, siteUrl } from "@/lib/site";
+import { WHATSAPP_NUMBER, BRAND, ROOT_DOMAIN, siteUrl } from "@/lib/site";
 import { ToastProvider } from "@/components/ui/Toast";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     db.notification.count({ where: { userId: user.id, readAt: null } }),
   ]);
   const items = notifications.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, href: n.href, readAt: n.readAt?.toISOString() ?? null, createdAt: n.createdAt.toISOString() }));
-  const intake = process.env.WHATSAPP_INTAKE_NUMBER ?? null;
+  const intake = process.env.WHATSAPP_INTAKE_NUMBER ?? WHATSAPP_NUMBER;
 
   return (
     <ToastProvider>

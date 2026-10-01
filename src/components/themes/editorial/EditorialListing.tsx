@@ -2,6 +2,7 @@ import { ShareButton } from "@/components/public/ShareButton";
 import { listingCtas } from "@/components/public/cta";
 import { Reveal } from "@/components/themes/shared/Reveal";
 import { localityLine, summaryLine, TRANSACTION_LABEL, STATUS_LABEL } from "@/components/themes/shared/helpers";
+import { BrandMark, hasBrand, sharedBy, GREETING_FALLBACK } from "@/components/themes/shared/BrandMark";
 import type { ListingPageProps } from "@/components/themes/types";
 import { Frame } from "./Frame";
 import { Gallery } from "./Gallery";
@@ -16,16 +17,17 @@ export function EditorialListing({ data, viewerName }: ListingPageProps) {
   const cta = listingCtas(data);
   const status = STATUS_LABEL[data.status];
   const preview = data.status === "DRAFT" || data.status === "ARCHIVED";
-  const brokerName = data.broker.card.showNamePhoto ? data.broker.name : data.broker.agencyName ?? "Listing";
+  const masthead = hasBrand(data.broker) ? <BrandMark broker={data.broker} /> : null;
+  const who = sharedBy(data.broker);
   const share = <ShareButton url={data.url} title={data.title} text={cta.share} listingId={data.id} className="ed-btn ed-btn-sm" />;
 
   return (
-    <Frame mastheadName={brokerName} mastheadHref={data.broker.siteUrl} mastheadRight={share} hasMobileBar preview={preview}>
+    <Frame masthead={masthead} mastheadHref={data.broker.siteUrl} mastheadRight={share} hasMobileBar preview={preview}>
       {viewerName && (
         <p className="ed-greet" role="status">
           <span aria-hidden="true">👋</span>
           <span>
-            Hi <strong>{viewerName}</strong>, {data.broker.name} shared this with you
+            Hi <strong>{viewerName}</strong>, {who ? `${who} shared this with you` : GREETING_FALLBACK}
           </span>
         </p>
       )}

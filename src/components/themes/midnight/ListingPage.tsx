@@ -2,8 +2,9 @@ import { MapPin, Sparkles, Check, ExternalLink, FileText, Download, Landmark } f
 import { TrackedLink } from "@/components/public/TrackedLink";
 import { listingCtas } from "@/components/public/cta";
 import { formatINR } from "@/lib/format";
+import { sharedBy, GREETING_FALLBACK } from "@/components/themes/shared/BrandMark";
 import type { ListingPageProps } from "@/components/themes/types";
-import { Shell, Panel, SectionTitle, Chip, Tile, btnQuiet } from "./ui";
+import { Shell, BrandBar, Panel, SectionTitle, Chip, Tile, btnQuiet } from "./ui";
 import { Gallery } from "./Gallery";
 import { Reveal } from "./Reveal";
 import { Description } from "./Description";
@@ -24,6 +25,7 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
   const sub = [perSqft, l.negotiable ? "Negotiable" : null].filter(Boolean).join(" · ");
   const hasVideo = !!(l.videoUrl || l.videoTourEmbedUrl || l.videoTourUrl);
   const hasMap = !!(l.mapEmbedUrl || l.mapUrl);
+  const who = sharedBy(l.broker);
 
   const heroOverlay = (
     <div className="mx-auto max-w-6xl px-4 pb-6 sm:pb-8">
@@ -70,9 +72,10 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
 
   return (
     <Shell>
+      <BrandBar broker={l.broker} />
       {viewerName && (
         <div className="border-b border-[#7C5CFF]/30 bg-[#7C5CFF]/10 px-4 py-2.5 text-center text-sm text-[#E2DBFF]">
-          Hi {viewerName} 👋 — <span className="font-semibold text-white">{l.broker.name}</span> shared this with you
+          Hi {viewerName} 👋 — {who ? <><span className="font-semibold text-white">{who}</span> shared this with you</> : GREETING_FALLBACK}
         </div>
       )}
 

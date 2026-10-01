@@ -10,6 +10,7 @@ export type ProfileData = {
   city: string;
   username: string;
   avatarUrl: string | null;
+  logoUrl: string | null;
   reraNumber: string;
   bio: string;
   yearsExperience: number | null;

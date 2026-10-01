@@ -20,6 +20,7 @@ export default async function SettingsPage() {
     city: user.city ?? "",
     username: user.username ?? "",
     avatarUrl: user.avatarUrl,
+    logoUrl: user.logoUrl,
     reraNumber: user.reraNumber ?? "",
     bio: user.bio ?? "",
     yearsExperience: user.yearsExperience,

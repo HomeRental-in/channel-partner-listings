@@ -26,7 +26,7 @@ export function proxy(req: NextRequest) {
   const passThrough = pathname.startsWith("/api") || pathname.startsWith("/uploads");
   if (sub && !RESERVED.has(sub) && !sub.includes(".") && !passThrough) {
     // Never rewrite dashboard/auth paths on a subdomain; send them to the root domain. /api and /uploads pass through untouched.
-    if (pathname.startsWith("/dashboard") || pathname.startsWith("/login") || pathname.startsWith("/review") || pathname.startsWith("/dev")) {
+    if (pathname.startsWith("/dashboard") || pathname.startsWith("/login") || pathname.startsWith("/review") || pathname.startsWith("/dev") || pathname.startsWith("/admin")) {
       const url = req.nextUrl.clone();
       url.host = ROOT;
       return NextResponse.redirect(url);

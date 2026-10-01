@@ -1,17 +1,19 @@
-import { MessageCircle, Phone, BadgeCheck, ArrowUpRight, Clock } from "lucide-react";
+import { MessageCircle, Phone, BadgeCheck, ArrowUpRight, Clock, Home } from "lucide-react";
 import clsx from "clsx";
 import { TrackedLink } from "@/components/public/TrackedLink";
 import { waLink, telLink } from "@/lib/site";
+import { BrandMark, cardIdentity, hiBroker } from "@/components/themes/shared/BrandMark";
 import type { PublicBroker } from "@/components/themes/types";
 import { Img, btnWa, btnGhost } from "./ui";
 
+/** Photo, else initials; a neutral home icon when the CP has no name yet. */
 export function Avatar({ broker, size = 56, className }: { broker: PublicBroker; size?: number; className?: string }) {
   const initials = broker.name.split(/\s+/).map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return broker.avatarUrl ? (
-    <Img src={broker.avatarUrl} alt={broker.name} className={clsx("rounded-full object-cover ring-2 ring-[#7C5CFF]/50", className)} />
+    <Img src={broker.avatarUrl} alt={broker.hasName ? broker.name : ""} className={clsx("rounded-full object-cover ring-2 ring-[#7C5CFF]/50", className)} />
   ) : (
     <div className={clsx("flex items-center justify-center rounded-full bg-gradient-to-br from-[#7C5CFF] to-[#22D3EE] font-bold text-white", className)} style={{ width: size, height: size }} aria-hidden>
-      {initials}
+      {broker.hasName ? initials : <Home size={Math.round(size * 0.42)} strokeWidth={1.75} />}
     </div>
   );
 }
@@ -22,17 +24,25 @@ export function Avatar({ broker, size = 56, className }: { broker: PublicBroker;
  */
 export function BrokerCard({ broker, listingId, waHref, callHref, compact = false }: { broker: PublicBroker; listingId: string | null; waHref?: string; callHref?: string; compact?: boolean }) {
   const { card } = broker;
-  const wa = card.showWhatsApp && broker.whatsapp ? (waHref ?? waLink(broker.whatsapp, `Hi ${broker.name}, I found you on your property site.`)) : null;
+  const wa = card.showWhatsApp && broker.whatsapp ? (waHref ?? waLink(broker.whatsapp, `${hiBroker(broker)}, I found you on your property site.`)) : null;
   const call = card.showCall && broker.phone ? (callHref ?? telLink(broker.phone)) : null;
   const showIdentity = card.showNamePhoto;
+  const id = cardIdentity(broker);
+  // The full card sits under a "Get in touch" section title, so it skips the fallback heading there.
+  const showHeading = id.named || compact;
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
         {showIdentity && <Avatar broker={broker} size={compact ? 44 : 56} className={compact ? "h-11 w-11" : "h-14 w-14"} />}
         <div className="min-w-0">
-          <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">Listed by</div>
-          <div className="truncate text-base font-semibold text-white">{showIdentity ? broker.name : "Channel Partner"}</div>
-          {card.showAgency && broker.agencyName && <div className="truncate text-sm text-[#A9AFBC]">{broker.agencyName}</div>}
+          {id.eyebrow && <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">{id.eyebrow}</div>}
+          {showHeading && <div className="truncate text-base font-semibold text-white">{id.heading}</div>}
+          {(id.logoUrl || id.agency) && (
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <BrandMark broker={broker} size="sm" chip logoOnly />
+              {id.agency && <span className="truncate text-sm text-[#A9AFBC]">{id.agency}</span>}
+            </div>
+          )}
           <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#7D8391]">
             {broker.reraNumber && <span className="inline-flex items-center gap-1"><BadgeCheck size={12} className="text-[#22D3EE]" /> RERA {broker.reraNumber}</span>}
             {broker.responseTime && <span className="inline-flex items-center gap-1"><Clock size={12} /> Replies {broker.responseTime}</span>}

@@ -6,17 +6,18 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 120;
 
 /**
- * POST /api/upload — multipart `file` + `kind` (photo|video|document|avatar|brochure|floorplan).
+ * POST /api/upload — multipart `file` + `kind` (photo|video|document|avatar|logo|brochure|floorplan).
  * Auth: a session, OR a review token via `?t=<token>&listingId=<id>` (no-login review page).
  * Returns { url, key, width, height, sizeBytes, name }.
  */
-type Kind = "photo" | "video" | "document" | "avatar" | "brochure" | "floorplan";
+type Kind = "photo" | "video" | "document" | "avatar" | "logo" | "brochure" | "floorplan";
 const MB = 1024 * 1024;
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif", "image/tiff"];
 const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm", "video/x-m4v", "video/3gpp"];
 const RULES: Record<Kind, { max: number; types: string[]; folder: string }> = {
   photo: { max: 10 * MB, types: IMAGE_TYPES, folder: "photos" },
   avatar: { max: 5 * MB, types: IMAGE_TYPES, folder: "avatars" },
+  logo: { max: 5 * MB, types: IMAGE_TYPES, folder: "logos" }, // stored as WebP, transparency preserved
   video: { max: 100 * MB, types: VIDEO_TYPES, folder: "videos" },
   document: { max: 25 * MB, types: ["application/pdf"], folder: "documents" },
   brochure: { max: 25 * MB, types: ["application/pdf"], folder: "brochures" },
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
 
   const buf = Buffer.from(await file.arrayBuffer());
   try {
-    if (isImage && (kind === "photo" || kind === "avatar" || kind === "floorplan")) {
+    if (isImage && (kind === "photo" || kind === "avatar" || kind === "logo" || kind === "floorplan")) {
       const stored = await storeImage(buf, rule.folder);
       return NextResponse.json({ ...stored, name: file.name });
     }

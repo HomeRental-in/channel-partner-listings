@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(rootUrl("/")),
   title: { default: `${BRAND} — Listing tool for channel partners`, template: `%s · ${BRAND}` },
   description: "Turn a WhatsApp message into a property listing buyers trust. Free, forever.",
+  applicationName: BRAND,
+  openGraph: { type: "website", siteName: BRAND, locale: "en_IN" },
+  twitter: { card: "summary_large_image" },
+  verification: process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : undefined,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

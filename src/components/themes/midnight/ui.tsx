@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import clsx from "clsx";
 import { BRAND, rootUrl } from "@/lib/site";
+import { BrandMark, hasBrand } from "@/components/themes/shared/BrandMark";
+import type { PublicBroker } from "@/components/themes/types";
 import { spaceGrotesk } from "./fonts";
 
 export const MN = {
@@ -41,6 +43,23 @@ export function Shell({ children, className }: { children: ReactNode; className?
           Powered by <span className="font-semibold text-[#A9AFBC]">{BRAND}</span>
         </a>
       </footer>
+    </div>
+  );
+}
+
+/**
+ * Slim top bar with the CP's brand: the logo on a white chip (so dark logos stay visible), else the agency/name as text.
+ * Renders nothing when there is no brand to show (never a placeholder). Honours the broker-card toggles.
+ */
+export function BrandBar({ broker }: { broker: PublicBroker }) {
+  if (!hasBrand(broker)) return null;
+  const mark = <BrandMark broker={broker} chip textClassName="truncate text-base font-semibold tracking-tight text-white" />;
+  const cls = "inline-flex min-w-0 max-w-full items-center";
+  return (
+    <div className="border-b border-white/5">
+      <div className="mx-auto flex max-w-6xl items-center px-4 py-3">
+        {broker.card.showProfileLink ? <a href={broker.siteUrl} className={cls}>{mark}</a> : <span className={cls}>{mark}</span>}
+      </div>
     </div>
   );
 }

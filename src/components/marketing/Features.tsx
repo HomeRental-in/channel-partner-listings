@@ -1,6 +1,5 @@
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { ROOT_DOMAIN } from "@/lib/site";
+import { ROOT_DOMAIN, whatsappStartUrl } from "@/lib/site";
 
 const FEATURES = [
   { title: "Unlimited listings, free forever", body: "Publish as many properties as you sell. No credit packs, no monthly quota, no card — the competitors charge ₹20–35 a listing; here it is ₹0." },
@@ -29,7 +28,7 @@ export default function Features() {
         <ol className="reveal" data-delay="0.1">
           {FEATURES.map((f, i) => (
             <li key={f.title}>
-              <Link href="/login" className="mk-row group">
+              <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="mk-row group">
                 <span className="mk-row-num">{String(i + 1).padStart(2, "0")}</span>
                 <span className="min-w-0">
                   <span className="mk-h3 block">{f.title}</span>
@@ -38,7 +37,7 @@ export default function Features() {
                 <span className="mk-row-arrow" aria-hidden>
                   <ArrowRight size={18} />
                 </span>
-              </Link>
+              </a>
             </li>
           ))}
         </ol>

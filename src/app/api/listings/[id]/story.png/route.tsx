@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { ImageResponse } from "next/og";
 import { getPublicListingById } from "@/lib/public";
 import { resolveOutputAccess } from "@/lib/outputs/access";
+import { SAMPLE_ID, sampleListing } from "@/lib/sample";
 import { photoAsDataUri } from "@/lib/outputs/images";
 import { StoryImage, storyFonts, STORY_W, STORY_H } from "@/lib/outputs/story";
 
@@ -11,10 +12,14 @@ export const maxDuration = 60;
 /** GET /api/listings/[id]/story.png?variant=1|2|3 — 1080×1920 PNG for WhatsApp/Instagram stories. */
 export async function GET(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
-  const access = await resolveOutputAccess(id);
+  // The marketing sample (/sample) is a fixture, not a database row.
+  const isSample = id === SAMPLE_ID;
+  const access = isSample
+    ? { ok: true as const, isOwner: true, listing: { id, userId: "", slug: "sample", updatedAt: new Date(0) } }
+    : await resolveOutputAccess(id);
   if (!access.ok) return NextResponse.json({ error: access.reason }, { status: access.status });
 
-  const data = await getPublicListingById(id);
+  const data = isSample ? sampleListing() : await getPublicListingById(id);
   if (!data) return NextResponse.json({ error: "Listing not found" }, { status: 404 });
 
   const v = Number(req.nextUrl.searchParams.get("variant") ?? "1");

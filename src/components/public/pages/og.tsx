@@ -43,7 +43,7 @@ export async function listingOgImage(l: PublicListing | null) {
           <div style={{ display: "flex", fontSize: 36, lineHeight: 1.15, maxWidth: 1000, overflow: "hidden" }}>{(l.title || "Property listing").slice(0, 90)}</div>
           {meta && <div style={{ display: "flex", fontSize: 24, opacity: 0.85 }}>{meta}</div>}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 14, fontSize: 22, opacity: 0.9 }}>
-            <div style={{ display: "flex" }}>{l.broker.card.showNamePhoto ? l.broker.name : l.broker.agencyName ?? BRAND}{l.broker.card.showAgency && l.broker.agencyName && l.broker.card.showNamePhoto ? ` · ${l.broker.agencyName}` : ""}</div>
+            <div style={{ display: "flex" }}>{l.broker.card.showNamePhoto && l.broker.hasName ? l.broker.name : l.broker.agencyName ?? BRAND}{l.broker.card.showAgency && l.broker.agencyName && l.broker.card.showNamePhoto ? ` · ${l.broker.agencyName}` : ""}</div>
             <div style={{ display: "flex", padding: "8px 18px", borderRadius: 999, background: "#F6F3EE", color: "#141414", fontSize: 20 }}>{BRAND}</div>
           </div>
         </div>

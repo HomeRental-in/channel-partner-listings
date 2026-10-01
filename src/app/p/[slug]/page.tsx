@@ -163,14 +163,15 @@ export default async function ProjectPage({ params }: Props) {
                 <div style={{ display: "grid", gap: "0.75rem" }}>
                   {listedBy.map((l) => {
                     const u = l.user;
-                    const name = u.name ?? "Property advisor";
+                    const agency = u.agencyName?.trim() || null;
+                    const name = u.name?.trim() || agency || "Advisor";
                     const wa = u.whatsappNumber ?? u.phone;
                     return (
                       <div className="ed-broker" key={u.id}>
-                        <Avatar broker={{ name, avatarUrl: u.avatarUrl }} />
+                        <Avatar broker={{ name, avatarUrl: u.avatarUrl, hasName: Boolean(u.name?.trim() || agency) }} />
                         <div style={{ minWidth: 0 }}>
                           <p style={{ fontWeight: 500 }}>{name}</p>
-                          <p className="ed-muted" style={{ fontSize: "0.88rem" }}>{[u.agencyName, u.city, u.reraNumber ? `RERA ${u.reraNumber}` : null].filter(Boolean).join(" · ")}</p>
+                          <p className="ed-muted" style={{ fontSize: "0.88rem" }}>{[agency !== name ? agency : null, u.city, u.reraNumber ? `RERA ${u.reraNumber}` : null].filter(Boolean).join(" · ")}</p>
                           <div className="ed-chips" style={{ marginTop: "0.7rem" }}>
                             <TrackedLink event="WHATSAPP_TAP" listingId={l.id} meta={{ from: "project_page" }} href={waLink(wa, `Hi, I'm interested in ${p.name}${place ? ` (${place})` : ""}.\n${listingUrl(u.username, l.slug)}`)} target="_blank" rel="noopener" className="ed-btn ed-btn-wa ed-btn-sm">
                               <MessageCircle size={15} aria-hidden="true" /> WhatsApp

@@ -11,7 +11,9 @@ export function Pop({ children, delay = 0, className }: { children: ReactNode; d
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (typeof IntersectionObserver === "undefined") { el.classList.add("is-in"); return; }
+    // Already on screen at load: reveal now. Observers don't fire in background tabs, which would leave the page blank.
+    const onScreen = el.getBoundingClientRect().top < window.innerHeight * 0.92;
+    if (onScreen || typeof IntersectionObserver === "undefined") { el.classList.add("is-in"); return; }
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) if (e.isIntersecting) { el.classList.add("is-in"); io.disconnect(); }

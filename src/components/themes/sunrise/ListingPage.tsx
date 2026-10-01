@@ -2,8 +2,9 @@ import { MapPin, Sparkles, Check, ExternalLink, FileText, Download, Landmark, Ta
 import { TrackedLink } from "@/components/public/TrackedLink";
 import { listingCtas } from "@/components/public/cta";
 import { formatINR } from "@/lib/format";
+import { sharedBy, GREETING_FALLBACK } from "@/components/themes/shared/BrandMark";
 import type { ListingPageProps } from "@/components/themes/types";
-import { Shell, Card, SectionTitle, Pill, Tile, btnSoft, btnWa, btnTeal } from "./ui";
+import { Shell, BrandBar, Card, SectionTitle, Pill, Tile, btnSoft, btnWa, btnTeal } from "./ui";
 import { Bento } from "./Bento";
 import { Pop } from "./Pop";
 import { Description } from "./Description";
@@ -22,6 +23,7 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
   const perSqft = l.perSqft ? `${formatINR(l.perSqft, { currency: l.currency, compact: false })}/sq ft` : null;
   const hasVideo = !!(l.videoUrl || l.videoTourEmbedUrl || l.videoTourUrl);
   const hasMap = !!(l.mapEmbedUrl || l.mapUrl);
+  const who = sharedBy(l.broker);
   const hasPricing = l.priceLines.length > 0 || l.electricity || l.waterCharges || l.priceHistoryNote || l.loanAvailable;
 
   const priceTile = (
@@ -38,11 +40,12 @@ export function ListingPage({ data, viewerName }: ListingPageProps) {
   return (
     <Shell>
       <div className="mx-auto max-w-5xl px-4 pb-8 pt-4 sm:pt-6">
+        <BrandBar broker={l.broker} />
         {viewerName && (
           <Pop>
             <div className="mb-4 flex items-center gap-2 rounded-full bg-[#DDEFEA] px-4 py-2.5 text-sm text-[#123F3A]">
               <span aria-hidden>👋</span>
-              <span>Hi <span className="font-extrabold">{viewerName}</span> — <span className="font-bold">{l.broker.name}</span> shared this with you</span>
+              <span>Hi <span className="font-extrabold">{viewerName}</span> — {who ? <><span className="font-bold">{who}</span> shared this with you</> : GREETING_FALLBACK}</span>
             </div>
           </Pop>
         )}

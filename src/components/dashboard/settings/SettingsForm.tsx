@@ -11,6 +11,7 @@ import { normaliseUsername, validateUsername } from "../username";
 import { AvatarUpload } from "./AvatarUpload";
 import { ChipsInput, ToggleChips } from "./ChipsInput";
 import { DangerZone } from "./DangerZone";
+import { LogoUpload } from "./LogoUpload";
 import { AwardsEditor, TestimonialsEditor } from "./ListEditors";
 import { SaveIndicator } from "./SaveIndicator";
 import { ThemePicker } from "./ThemePicker";
@@ -57,6 +58,7 @@ export function SettingsForm({ initial, rootDomain }: { initial: ProfileData; ro
 
       <Section id="profile" title="My profile" description="What buyers see on your site and on every listing's broker card.">
         <AvatarUpload url={p.avatarUrl} name={p.name} onChange={(url) => set("avatarUrl", url, { immediate: true })} />
+        <LogoUpload url={p.logoUrl} onChange={(url) => set("logoUrl", url, { immediate: true })} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Full name" value={p.name} onChange={(e) => set("name", e.target.value)} placeholder="Your name" maxLength={80} />
           <Input label="Agency" value={p.agencyName} onChange={(e) => set("agencyName", e.target.value)} placeholder="Agency or brand name" maxLength={80} />

@@ -1,7 +1,7 @@
 import { Layers } from "lucide-react";
 import { ShareButton } from "@/components/public/ShareButton";
 import type { CollectionProps } from "@/components/themes/types";
-import { Shell, Panel, btnQuiet } from "./ui";
+import { Shell, BrandBar, Panel, btnQuiet } from "./ui";
 import { BrokerCard } from "./BrokerCard";
 import { CardGrid } from "./ListingCard";
 import { Reveal } from "./Reveal";
@@ -10,6 +10,7 @@ export function Collection({ data }: CollectionProps) {
   const n = data.listings.length;
   return (
     <Shell>
+      <BrandBar broker={data.broker} />
       <header className="relative overflow-hidden border-b border-white/5">
         <div className="pointer-events-none absolute -right-32 -top-32 h-80 w-80 rounded-full bg-[#7C5CFF]/25 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 py-10 sm:py-14">

@@ -4,7 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getListingStats, getOwnerStats } from "@/lib/analytics";
 import { formatINR, usernameFrom } from "@/lib/format";
-import { ROOT_DOMAIN, siteUrl, waLink } from "@/lib/site";
+import { WHATSAPP_NUMBER, ROOT_DOMAIN, siteUrl, waLink } from "@/lib/site";
 import { SiteCard } from "@/components/dashboard/SiteCard";
 import { StatTiles } from "@/components/dashboard/StatTiles";
 import { RecentListings } from "@/components/dashboard/RecentListings";
@@ -48,7 +48,7 @@ export default async function DashboardHome() {
   const live = counts.find((c) => c.status === "LIVE")?._count._all ?? 0;
   const drafts = counts.find((c) => c.status === "DRAFT")?._count._all ?? 0;
   const firstName = (user.name ?? "").trim().split(/\s+/)[0] || null;
-  const intake = process.env.WHATSAPP_INTAKE_NUMBER ?? null;
+  const intake = process.env.WHATSAPP_INTAKE_NUMBER ?? WHATSAPP_NUMBER;
 
   return (
     <div className="flex flex-col gap-5 pt-2">

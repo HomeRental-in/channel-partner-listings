@@ -16,14 +16,15 @@ export async function loadStorefront(username: string): Promise<PublicStorefront
 export function storefrontMetadata(s: PublicStorefront | null): Metadata {
   if (!s) return { title: "Not found", robots: { index: false } };
   const b = s.broker;
-  const title = [b.name, b.agencyName].filter(Boolean).join(" · ");
+  // Never print the placeholder name ("Your advisor") in titles: fall back to a neutral page title.
+  const title = b.hasName ? [b.name, b.agencyName !== b.name ? b.agencyName : null].filter(Boolean).join(" · ") : `Properties${b.city ? ` in ${b.city}` : ""}`;
   const n = s.listings.length;
-  const description = b.bio?.trim() || `${n} propert${n === 1 ? "y" : "ies"}${b.city ? ` in ${b.city}` : ""} listed by ${b.name}. WhatsApp or call for details.`;
+  const description = b.bio?.trim() || `${n} propert${n === 1 ? "y" : "ies"}${b.city ? ` in ${b.city}` : ""}${b.hasName ? ` listed by ${b.name}` : ""}. WhatsApp or call for details.`;
   return {
     title,
     description,
     alternates: { canonical: b.siteUrl },
-    openGraph: { title, description, url: b.siteUrl, type: "profile", siteName: BRAND, images: b.avatarUrl ? [{ url: absoluteUrl(b.avatarUrl), alt: b.name }] : s.listings[0]?.cover ? [{ url: absoluteUrl(s.listings[0].cover.url) }] : undefined },
+    openGraph: { title, description, url: b.siteUrl, type: "profile", siteName: BRAND, images: b.avatarUrl ? [{ url: absoluteUrl(b.avatarUrl), alt: b.hasName ? b.name : title }] : s.listings[0]?.cover ? [{ url: absoluteUrl(s.listings[0].cover.url) }] : undefined },
     twitter: { card: "summary_large_image", title, description },
   };
 }

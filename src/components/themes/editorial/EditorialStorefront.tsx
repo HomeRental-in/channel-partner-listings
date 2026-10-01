@@ -3,6 +3,7 @@ import { TrackedLink } from "@/components/public/TrackedLink";
 import { ShareButton } from "@/components/public/ShareButton";
 import { Reveal } from "@/components/themes/shared/Reveal";
 import { groupListings } from "@/components/themes/shared/helpers";
+import { BrandMark, hasBrand, hiBroker, storefrontHero } from "@/components/themes/shared/BrandMark";
 import { waLink, telLink } from "@/lib/site";
 import type { StorefrontProps } from "@/components/themes/types";
 import { Frame } from "./Frame";
@@ -16,6 +17,9 @@ export function EditorialStorefront({ data }: StorefrontProps) {
   const groups = groupListings(data);
   const showWa = b.card.showWhatsApp && Boolean(b.whatsapp);
   const showCall = b.card.showCall && Boolean(b.phone);
+  const hero = storefrontHero(b);
+  // Storefront = the CP's own site: the brand always shows here (card toggles only apply to listing cards).
+  const masthead = hasBrand(b, false) ? <BrandMark broker={b} honourCard={false} /> : null;
   const stats = [
     { n: b.activeListings, label: b.activeListings === 1 ? "Listing" : "Listings" },
     b.yearsExperience ? { n: b.yearsExperience, label: "Yrs exp" } : null,
@@ -23,12 +27,12 @@ export function EditorialStorefront({ data }: StorefrontProps) {
   ].filter((s): s is { n: number; label: string } => Boolean(s));
 
   return (
-    <Frame mastheadName={b.name} mastheadHref={b.siteUrl} mastheadRight={<ShareButton url={b.siteUrl} title={b.name} listingId={null} className="ed-btn ed-btn-sm" />}>
+    <Frame masthead={masthead} mastheadHref={b.siteUrl} mastheadRight={<ShareButton url={b.siteUrl} title={hero.heading} listingId={null} className="ed-btn ed-btn-sm" />}>
       <Reveal as="section" className="ed-store-hero ed-reveal">
         <Avatar broker={b} size="lg" />
         <div style={{ minWidth: 0 }}>
-          <p className="ed-eyebrow">{[b.agencyName, b.city].filter(Boolean).join(" · ") || "Property advisor"}</p>
-          <h1 className="ed-serif" style={{ fontSize: "clamp(2.2rem, 5vw, 3.6rem)", marginTop: "0.35rem" }}>{b.name}</h1>
+          {hero.eyebrow && <p className="ed-eyebrow">{hero.eyebrow}</p>}
+          <h1 className="ed-serif" style={{ fontSize: "clamp(2.2rem, 5vw, 3.6rem)", marginTop: hero.eyebrow ? "0.35rem" : 0 }}>{hero.heading}</h1>
           {b.reraNumber && <p className="ed-faint" style={{ fontSize: "0.8rem", marginTop: "0.35rem" }}>RERA {b.reraNumber}</p>}
           {stats.length > 0 && (
             <div className="ed-stats">
@@ -42,7 +46,7 @@ export function EditorialStorefront({ data }: StorefrontProps) {
           )}
           <div className="ed-chips" style={{ marginTop: "1.5rem" }}>
             {showWa && (
-              <TrackedLink event="WHATSAPP_TAP" listingId={null} meta={{ from: "storefront" }} href={waLink(b.whatsapp, `Hi ${b.name}, I saw your listings on ${b.siteUrl}`)} target="_blank" rel="noopener" className="ed-btn ed-btn-wa">
+              <TrackedLink event="WHATSAPP_TAP" listingId={null} meta={{ from: "storefront" }} href={waLink(b.whatsapp, `${hiBroker(b)}, I saw your listings on ${b.siteUrl}`)} target="_blank" rel="noopener" className="ed-btn ed-btn-wa">
                 <MessageCircle size={17} aria-hidden="true" /> WhatsApp
               </TrackedLink>
             )}

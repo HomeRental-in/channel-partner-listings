@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
@@ -13,6 +14,7 @@ gsap.registerPlugin(ScrollTrigger);
  * hydration; `prefers-reduced-motion` short-circuits everything (CSS shows content immediately).
  */
 export default function Motion() {
+  const pathname = usePathname();
   useEffect(() => {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) return;
@@ -72,7 +74,7 @@ export default function Motion() {
       gsap.ticker.remove(tick);
       lenis.destroy();
     };
-  }, []);
+  }, [pathname]);
 
   return null;
 }

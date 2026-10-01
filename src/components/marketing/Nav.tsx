@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { ArrowUpRight, Eye, Menu, X } from "lucide-react";
+import { whatsappStartUrl } from "@/lib/site";
 
 const LINKS = [
   { id: "how-it-works", label: "How it works" },
@@ -55,15 +56,21 @@ export default function Nav({ brand }: { brand: string }) {
                 {l.label}
               </a>
             ))}
+            <Link href="/partners" className="mk-nav-link">
+              For CP firms
+            </Link>
           </nav>
 
           <div className="flex items-center gap-2.5">
             <Link href="/sample" className="icon-btn mk-white hidden md:inline-flex" aria-label="See a sample listing" title="See a sample listing">
               <Eye size={18} />
             </Link>
-            <Link href="/login" className="btn btn-dark hidden md:inline-flex">
-              Create a free listing <span aria-hidden>👋</span>
+            <Link href="/login" className="mk-nav-link hidden md:inline-flex">
+              Log in
             </Link>
+            <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-dark hidden md:inline-flex">
+              Create a free listing <span aria-hidden>👋</span>
+            </a>
             <button type="button" className="icon-btn mk-white md:hidden" aria-label="Open menu" aria-expanded={open} onClick={() => setOpen(true)}>
               <Menu size={20} />
             </button>
@@ -85,14 +92,17 @@ export default function Nav({ brand }: { brand: string }) {
               {l.label} <ArrowUpRight size={28} className="mk-muted" />
             </a>
           ))}
+          <Link href="/partners" className="mk-menu-link" onClick={() => setOpen(false)}>
+            For CP firms <ArrowUpRight size={28} className="mk-muted" />
+          </Link>
           <Link href="/sample" className="mk-menu-link" onClick={() => setOpen(false)}>
             Sample listing <ArrowUpRight size={28} className="mk-muted" />
           </Link>
         </nav>
         <div className="mt-auto flex flex-col gap-3">
-          <Link href="/login" className="btn btn-dark justify-center text-lg" onClick={() => setOpen(false)}>
+          <a href={whatsappStartUrl()} target="_blank" rel="noopener noreferrer" className="btn btn-dark justify-center text-lg" onClick={() => setOpen(false)}>
             Create a free listing <span aria-hidden>👋</span>
-          </Link>
+          </a>
           <Link href="/login" className="btn bg-white justify-center text-lg" onClick={() => setOpen(false)}>
             Log in
           </Link>

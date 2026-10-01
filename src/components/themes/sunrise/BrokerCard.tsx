@@ -1,17 +1,19 @@
-import { MessageCircle, Phone, BadgeCheck, ArrowUpRight, Clock } from "lucide-react";
+import { MessageCircle, Phone, BadgeCheck, ArrowUpRight, Clock, Home } from "lucide-react";
 import clsx from "clsx";
 import { TrackedLink } from "@/components/public/TrackedLink";
 import { waLink, telLink } from "@/lib/site";
+import { BrandMark, cardIdentity, hiBroker } from "@/components/themes/shared/BrandMark";
 import type { PublicBroker } from "@/components/themes/types";
 import { Img, btnWa, btnTeal } from "./ui";
 
+/** Photo, else initials; a neutral home icon when the CP has no name yet. */
 export function Avatar({ broker, size = 64, className }: { broker: PublicBroker; size?: number; className?: string }) {
   const initials = broker.name.split(/\s+/).map((s) => s[0]).filter(Boolean).slice(0, 2).join("").toUpperCase();
   return broker.avatarUrl ? (
-    <Img src={broker.avatarUrl} alt={broker.name} className={clsx("rounded-[22px] object-cover ring-4 ring-[#FFE4DB]", className)} />
+    <Img src={broker.avatarUrl} alt={broker.hasName ? broker.name : ""} className={clsx("rounded-[22px] object-cover ring-4 ring-[#FFE4DB]", className)} />
   ) : (
     <div className={clsx("flex items-center justify-center rounded-[22px] bg-[#FF6B4A] font-extrabold text-white ring-4 ring-[#FFE4DB]", className)} style={{ width: size, height: size }} aria-hidden>
-      {initials}
+      {broker.hasName ? initials : <Home size={Math.round(size * 0.42)} strokeWidth={2} />}
     </div>
   );
 }
@@ -19,9 +21,12 @@ export function Avatar({ broker, size = 64, className }: { broker: PublicBroker;
 /** Broker card. Honours `broker.card` toggles. `big` renders the large bottom-of-page version with a big CTA. */
 export function BrokerCard({ broker, listingId, waHref, callHref, big = false }: { broker: PublicBroker; listingId: string | null; waHref?: string; callHref?: string; big?: boolean }) {
   const { card } = broker;
-  const wa = card.showWhatsApp && broker.whatsapp ? (waHref ?? waLink(broker.whatsapp, `Hi ${broker.name}, I found you on your property site.`)) : null;
+  const wa = card.showWhatsApp && broker.whatsapp ? (waHref ?? waLink(broker.whatsapp, `${hiBroker(broker)}, I found you on your property site.`)) : null;
   const call = card.showCall && broker.phone ? (callHref ?? telLink(broker.phone)) : null;
   const showIdentity = card.showNamePhoto;
+  const id = cardIdentity(broker);
+  // The big card sits under a "Get in touch" section title, so it skips the fallback heading there.
+  const showHeading = id.named || !big;
   const stats = [
     broker.yearsExperience ? { v: `${broker.yearsExperience}+`, l: "yrs exp" } : null,
     broker.dealsClosed ? { v: String(broker.dealsClosed), l: "deals" } : null,
@@ -32,9 +37,14 @@ export function BrokerCard({ broker, listingId, waHref, callHref, big = false }:
       <div className="flex items-center gap-4">
         {showIdentity && <Avatar broker={broker} size={big ? 80 : 56} className={big ? "h-20 w-20" : "h-14 w-14"} />}
         <div className="min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-[.14em] text-[#C2411F]">Listed by</div>
-          <div className={clsx("truncate font-extrabold text-[#123F3A]", big ? "text-2xl" : "text-base")}>{showIdentity ? broker.name : "Channel Partner"}</div>
-          {card.showAgency && broker.agencyName && <div className="truncate text-sm text-[#2D5751]">{broker.agencyName}</div>}
+          {id.eyebrow && <div className="text-[11px] font-bold uppercase tracking-[.14em] text-[#C2411F]">{id.eyebrow}</div>}
+          {showHeading && <div className={clsx("truncate font-extrabold text-[#123F3A]", big ? "text-2xl" : "text-base")}>{id.heading}</div>}
+          {(id.logoUrl || id.agency) && (
+            <div className="mt-1 flex min-w-0 items-center gap-2">
+              <BrandMark broker={broker} size="sm" logoOnly />
+              {id.agency && <span className="truncate text-sm text-[#2D5751]">{id.agency}</span>}
+            </div>
+          )}
           <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#6E8A85]">
             {broker.reraNumber && <span className="inline-flex items-center gap-1"><BadgeCheck size={12} className="text-[#FF6B4A]" /> RERA {broker.reraNumber}</span>}
             {broker.responseTime && <span className="inline-flex items-center gap-1"><Clock size={12} /> Replies {broker.responseTime}</span>}

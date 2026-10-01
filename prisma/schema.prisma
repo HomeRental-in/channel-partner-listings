@@ -23,6 +23,7 @@ model User {
   city             String?
   username         String?   @unique // subdomain slug: username.<ROOT_DOMAIN>
   avatarUrl        String?
+  logoUrl         String?  // brand / agency logo shown in the page header instead of the name
   reraNumber       String?
   bio              String?
   yearsExperience  Int?
@@ -394,4 +395,34 @@ model Notification {
   createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
+}
+
+// ───────────────────────── Partner programme (EOI) ─────────────────────────
+
+/** Expression of interest from a channel partner / agency for the Founding Partner programme (/partners). */
+model PartnerEoi {
+  id           String   @id @default(cuid())
+  phone        String   @unique // E.164 — one EOI per phone; resubmitting updates it
+  contactName  String
+  agencyName   String
+  role         String? // "Founder", "Sales head", ...
+  email        String?
+  city         String // city slug from src/lib/seo/cities.ts, or free text
+  localities   Json     @default("[]") // string[] — micro-markets they dominate
+  teamSize     String // bucket id, see src/lib/partners.ts
+  inventory    String // active listings bucket id
+  monthlyLinks String // property links shared per month bucket id
+  currentTools Json     @default("[]") // string[]
+  reraNumber   String?
+  message      String?
+  tier         String // FOUNDING | GROWTH | PARTNER
+  score        Int      @default(0) // 0–100, higher = bigger / faster to onboard
+  status       String   @default("NEW") // NEW | CONTACTED | ONBOARDING | LIVE | DECLINED
+  source       Json     @default("{}") // utm_* + referrer path at submit time
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([city])
+  @@index([tier, score])
 }

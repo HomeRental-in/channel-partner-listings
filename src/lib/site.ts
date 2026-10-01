@@ -1,6 +1,14 @@
 /** URL helpers. All CP sites are subdomains of ROOT_DOMAIN so the Meta cookie is shared. */
 export const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "localhost:3000";
 export const BRAND = process.env.NEXT_PUBLIC_BRAND_NAME ?? "EstateInfo";
+/** The WhatsApp bot number CPs message to create listings (E.164). Shown on the marketing site and used by every "Create a free listing" CTA. */
+export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "+917090080801";
+/** "+91 70900 80801" */
+export const WHATSAPP_DISPLAY = WHATSAPP_NUMBER.replace(/^\+91(\d{5})(\d{5})$/, "+91 $1 $2");
+/** Opens a chat with the bot with "Hi" prefilled — the first message starts the listing flow and gives us the CP's number. */
+export function whatsappStartUrl(text = "Hi") {
+  return `https://wa.me/${WHATSAPP_NUMBER.replace(/[^\d]/g, "")}?text=${encodeURIComponent(text)}`;
+}
 const PROTOCOL = ROOT_DOMAIN.startsWith("localhost") || ROOT_DOMAIN.includes("lvh.me") ? "http" : "https";
 
 export function rootUrl(path = "/") {

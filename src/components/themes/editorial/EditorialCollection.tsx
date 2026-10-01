@@ -1,5 +1,6 @@
 import { ShareButton } from "@/components/public/ShareButton";
 import { Reveal } from "@/components/themes/shared/Reveal";
+import { BrandMark, hasBrand, hiBroker } from "@/components/themes/shared/BrandMark";
 import type { CollectionProps } from "@/components/themes/types";
 import { Frame } from "./Frame";
 import { BrokerCard } from "./BrokerCard";
@@ -9,7 +10,7 @@ import { ListingCard } from "./ListingCard";
 export function EditorialCollection({ data }: CollectionProps) {
   const b = data.broker;
   return (
-    <Frame mastheadName={b.name} mastheadHref={b.siteUrl} mastheadRight={<ShareButton url={data.url} title={data.title} text={`${data.title}\n${data.url}`} listingId={null} className="ed-btn ed-btn-sm" />}>
+    <Frame masthead={hasBrand(b) ? <BrandMark broker={b} /> : null} mastheadHref={b.siteUrl} mastheadRight={<ShareButton url={data.url} title={data.title} text={`${data.title}\n${data.url}`} listingId={null} className="ed-btn ed-btn-sm" />}>
       <Reveal as="section" className="ed-reveal" style={{ paddingBlock: "2.5rem 1.5rem" }}>
         <p className="ed-eyebrow">Collection · {data.listings.length} {data.listings.length === 1 ? "property" : "properties"}</p>
         <h1 className="ed-serif" style={{ fontSize: "clamp(2.2rem, 5vw, 3.6rem)", marginTop: "0.35rem", textWrap: "balance" }}>{data.title}</h1>
@@ -29,7 +30,7 @@ export function EditorialCollection({ data }: CollectionProps) {
       </Reveal>
 
       <Reveal as="section" className="ed-section ed-reveal">
-        <BrokerCard broker={b} listingId={null} message={`Hi ${b.name}, I'm interested in "${data.title}":\n${data.url}`} />
+        <BrokerCard broker={b} listingId={null} message={`${hiBroker(b)}, I'm interested in "${data.title}":\n${data.url}`} />
       </Reveal>
     </Frame>
   );

@@ -1,7 +1,8 @@
-import { MapPin, BadgeCheck, MessageCircle, Phone, Languages, Map as MapIcon, Trophy, Quote, Clock } from "lucide-react";
+import { BadgeCheck, MessageCircle, Phone, Languages, Map as MapIcon, Trophy, Quote, Clock } from "lucide-react";
 import clsx from "clsx";
 import { TrackedLink } from "@/components/public/TrackedLink";
 import { waLink, telLink } from "@/lib/site";
+import { BrandMark, hiBroker, storefrontHero } from "@/components/themes/shared/BrandMark";
 import type { StorefrontProps } from "@/components/themes/types";
 import { Shell, Panel, SectionTitle, Chip, btnWa, btnGhost } from "./ui";
 import { Avatar } from "./BrokerCard";
@@ -10,8 +11,9 @@ import { Reveal } from "./Reveal";
 
 export function Storefront({ data }: StorefrontProps) {
   const b = data.broker;
-  const wa = b.card.showWhatsApp && b.whatsapp ? waLink(b.whatsapp, `Hi ${b.name}, I'm looking for a property. Can you help?`) : null;
+  const wa = b.card.showWhatsApp && b.whatsapp ? waLink(b.whatsapp, `${hiBroker(b)}, I'm looking for a property. Can you help?`) : null;
   const call = b.card.showCall && b.phone ? telLink(b.phone) : null;
+  const hero = storefrontHero(b);
   const byId = new Map(data.listings.map((l) => [l.id, l]));
   const grouped = new Set<string>();
   const groups = data.groups
@@ -35,14 +37,16 @@ export function Storefront({ data }: StorefrontProps) {
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
             <Avatar broker={b} size={112} className="h-24 w-24 sm:h-28 sm:w-28" />
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">Property advisor</div>
-              <h1 className="mt-1 text-3xl text-white sm:text-5xl">{b.name}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#A9AFBC]">
-                {b.agencyName && <span>{b.agencyName}</span>}
-                {b.city && <span className="inline-flex items-center gap-1"><MapPin size={14} className="text-[#22D3EE]" /> {b.city}</span>}
-                {b.reraNumber && <span className="inline-flex items-center gap-1"><BadgeCheck size={14} className="text-[#22D3EE]" /> RERA {b.reraNumber}</span>}
-                {b.responseTime && <span className="inline-flex items-center gap-1"><Clock size={14} /> Replies {b.responseTime}</span>}
-              </div>
+              {/* Storefront = the CP's own site: the brand always shows here (card toggles only apply to listing cards). */}
+              <BrandMark broker={b} honourCard={false} chip logoOnly className="mb-3" />
+              {hero.eyebrow && <div className="text-[11px] uppercase tracking-[.18em] text-[#7C5CFF]">{hero.eyebrow}</div>}
+              <h1 className="mt-1 text-3xl text-white sm:text-5xl">{hero.heading}</h1>
+              {(b.reraNumber || b.responseTime) && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#A9AFBC]">
+                  {b.reraNumber && <span className="inline-flex items-center gap-1"><BadgeCheck size={14} className="text-[#22D3EE]" /> RERA {b.reraNumber}</span>}
+                  {b.responseTime && <span className="inline-flex items-center gap-1"><Clock size={14} /> Replies {b.responseTime}</span>}
+                </div>
+              )}
               {b.bio && <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-[#C9CDD6]">{b.bio}</p>}
               <div className="mt-5 flex flex-wrap gap-2">
                 {wa && (
