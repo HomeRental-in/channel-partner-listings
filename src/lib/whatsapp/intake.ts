@@ -23,6 +23,8 @@ export const DONE_RE = /^(done|ho gaya|hogaya|bas|finish|finished|complete|ok do
 const HELP_RE = /^(help|\?|how|kaise)$/i;
 const CANCEL_RE = /^(cancel|stop|rehne do)$/i;
 const NEW_RE = /^(new|start|restart|start over|naya)$/i;
+/** A bare greeting (the website's "Create a free listing" button prefills "Hi"). Never listing content. */
+const GREET_RE = /^(hi+|hello+|hey+|hola|namaste|namaskar|good (morning|afternoon|evening))[\s!.]*$/i;
 
 const MAX_DAILY_UNVERIFIED = 10;
 
@@ -127,14 +129,28 @@ class Machine {
     });
   }
 
-  private command(): "done" | "help" | "cancel" | "new" | null {
+  private command(): "done" | "help" | "cancel" | "new" | "greet" | null {
     if (this.msg.kind !== "text") return null;
     const t = (this.msg.text ?? "").trim();
     if (DONE_RE.test(t)) return "done";
     if (HELP_RE.test(t)) return "help";
     if (CANCEL_RE.test(t)) return "cancel";
     if (NEW_RE.test(t)) return "new";
+    if (GREET_RE.test(t)) return "greet";
     return null;
+  }
+
+  /** A greeting mid-session always gets an answer: the welcome if nothing is pending, else what is waiting. */
+  private async greet() {
+    const session = await this.sessionMessages();
+    const photos = session.filter((r) => r.kind === "image" && r.mediaUrl).length;
+    const notes = session.filter((r) => r.kind === "text" && r.text && !GREET_RE.test(r.text.trim())).length;
+    if (!photos && !notes) {
+      await this.say(WELCOME);
+      return;
+    }
+    const have = [photos ? `${photos} photo${photos === 1 ? "" : "s"}` : null, notes ? `${notes} note${notes === 1 ? "" : "s"}` : null].filter(Boolean).join(" and ");
+    await this.say(`Welcome back 👋 I still have ${have} from earlier. Send more, type DONE to get your link, or NEW to start over.`);
   }
 
   async run() {
@@ -180,6 +196,9 @@ class Machine {
       case "done":
         await this.finalize();
         return;
+      case "greet":
+        await this.greet();
+        return;
     }
 
     if (isMedia) {
@@ -192,7 +211,7 @@ class Machine {
     }
     if (this.msg.kind === "text") {
       const session = await this.sessionMessages();
-      const texts = session.filter((r) => r.kind === "text" && r.text);
+      const texts = session.filter((r) => r.kind === "text" && r.text && !GREET_RE.test(r.text.trim()));
       if (texts.length === 1) await this.say("Noted 👍 Send more photos or details, and type DONE when finished.");
       return;
     }
@@ -234,7 +253,7 @@ class Machine {
 
   private async finalize() {
     const session = await this.sessionMessages();
-    const texts = session.filter((r) => r.kind === "text" && r.text && !DONE_RE.test(r.text) && !HELP_RE.test(r.text)).map((r) => r.text!.trim());
+    const texts = session.filter((r) => r.kind === "text" && r.text && !DONE_RE.test(r.text) && !HELP_RE.test(r.text) && !GREET_RE.test(r.text.trim())).map((r) => r.text!.trim());
     const photos = session.filter((r) => r.kind === "image" && r.mediaUrl).map((r) => r.mediaUrl!);
     const videos = session.filter((r) => r.kind === "video" && r.mediaUrl).map((r) => r.mediaUrl!);
     const documents = session.filter((r) => r.kind === "document" && r.mediaUrl);
